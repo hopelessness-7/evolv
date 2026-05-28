@@ -1,6 +1,6 @@
 # Evolv
 
-Саморазвивающаяся ИИ-платформа для обучения коду — «живой учебник», а не статичный курс.
+Self-evolving AI-powered platform for learning code — a living textbook, not a fixed video sequence.
 
 **Languages:** [Русский](#русский) · [English](#english)
 
@@ -16,101 +16,36 @@
 
 | Столп | Описание |
 |-------|----------|
-| **Путь** | Граф знаний с зависимостями (треки: Node, SQL, …) |
-| **Канон** | Одна актуальная версия темы; озеро версий для истории |
-| **Coach** | План на день, подсказки, разбор ошибок, адаптивная сложность |
+| **Путь** | Один общий граф знаний с зависимостями. Персональные маршруты — это разные обходы общего графа, а не клоны курсов под каждого пользователя. |
+| **Канон** | Одна актуальная версия темы; история редакций сохраняется как озеро версий. |
+| **Coach** | План на день, подсказки, разбор ошибок, адаптивная сложность. |
 
-Индивидуальный маршрут — это **путь по общему контенту**, а не клон курса под каждого пользователя.
+ИИ генерирует и уточняет контент на основе агрегированных ошибок пользователей. С ростом пользователей граф становится точнее и плотнее.
 
-### Архитектура (bootstrap)
+### Архитектура
 
-```
-Client → Nginx → Gateway (NestJS 11 / Node 24) → Core (Laravel 13 / PHP 8.3)
-                      ↓                              ↓
-                 users (auth)                  curriculum, content, progress
-                      ↓
-              LLM Worker (Python 3.13)    Practice Runner (Go 1.26) → Docker sandboxes
-                      ↓
-                   Ollama
-```
+Монолит на Laravel 13 с DDD-модулями. Подробности:
 
-- **Postgres 16** + `pgvector` — граф, канон, прогресс, эмбеддинги
-- **Redis 7** — очереди и кэш
-- **Монорепо** — все сервисы в одном репозитории
+- [docs/architecture.md](docs/architecture.md) — топология, стек, модули, потоки данных
+- [docs/data-model.md](docs/data-model.md) — таблицы и связи (ERD)
+- [docs/adr/](docs/adr/) — обоснования архитектурных решений
 
-Подробнее: [docs/architecture.md](docs/architecture.md) (RU/EN), [docs/adr/](docs/adr/).
+### Стек
 
-### Структура репозитория
+- **Backend:** Laravel 13 + Sail (PHP 8.3)
+- **Frontend:** Vue 3 + Quasar — отдельный репозиторий, сборки под web / PWA / desktop / mobile
+- **Auth:** Laravel Sanctum + spatie/laravel-permission
+- **Данные:** MySQL 8, Qdrant (векторы), Meilisearch (полнотекст), Redis 7
+- **LLM:** Ollama локально, через абстракцию `LlmDriver` (см. [ADR-0006](docs/adr/0006-llm-driver-abstraction.md))
+- **Выполнение кода:** Judge0
+- **Real-time:** Laravel Reverb
+- **Админ-панель:** Filament 3
 
-```
-evolv/
-├── services/
-│   ├── gateway/          # NestJS — auth, JWT, прокси API
-│   ├── core/             # Laravel — бизнес-логика
-│   ├── llm-worker/       # FastAPI — эмбеддинги, генерация
-│   └── practice-runner/  # Go — оркестрация Docker-песочниц
-├── infra/                # nginx, postgres init, ollama
-├── sandbox-images/       # node-learn, …
-├── shared/               # контракты, сиды
-└── docs/                 # архитектура, ADR, OpenAPI
-```
+### Требования к окружению
 
-### Требования
-
-- Docker Desktop или Docker Engine + Compose v2
-- Make
+- Docker Desktop / Docker Engine + Compose v2
+- Make (опционально, для шорткатов)
 - Git
-
-Опционально (локальная разработка одного сервиса без Docker):
-
-- PHP 8.3, Composer
-- Node 24, npm
-- Python 3.13, [uv](https://docs.astral.sh/uv/)
-- Go 1.26
-
-### Быстрый старт
-
-```bash
-git clone https://github.com/hopelessness-7/evolv.git
-cd evolv
-cp .env.example .env
-# Отредактируйте .env — POSTGRES_PASSWORD, INTERNAL_SERVICE_TOKEN, JWT secrets
-```
-
-Пошаговая сборка (инфра и сервисы своими руками): **[docs/bootstrap/](docs/bootstrap/)**
-
-```bash
-# После этапа 2 (docker-compose.yml создан по гайду):
-docker compose up -d
-# Этапы 3–4: make migrate, make smoke
-```
-
-### Команды Make
-
-| Команда | Описание |
-|---------|----------|
-| `make up` | Запустить все сервисы |
-| `make down` | Остановить контейнеры |
-| `make logs` | Смотреть логи |
-| `make migrate` | Применить миграции |
-| `make seed` | Заполнить dev-данными |
-| `make test` | Запустить тесты сервисов |
-| `make build-sandbox` | Собрать образ `evolv/node-learn` |
-| `make smoke` | Сквозная проверка здоровья |
-
-### Версии стеков
-
-| Компонент | Версия |
-|-----------|--------|
-| PHP | 8.3 |
-| Laravel | 13 |
-| Node.js | 24 LTS |
-| NestJS | 11 |
-| Python | 3.13 |
-| FastAPI | 0.115+ |
-| Go | 1.26 |
-| Postgres | 16 |
-| Redis | 7 |
 
 ### Лицензия
 
@@ -122,65 +57,40 @@ MIT — см. [LICENSE](LICENSE).
 
 ## English
 
-Self-evolving AI platform for learning code — a living textbook, not a fixed video sequence.
-
 ### Concept
 
 | Pillar | Description |
 |--------|-------------|
-| **Path** | Knowledge graph with dependencies (tracks: Node, SQL, …) |
-| **Canon** | One active version per topic; version lake for history |
-| **Coach** | Daily plan, hints, error analysis, adaptive difficulty |
+| **Path** | One shared knowledge graph; per-user routes are different traversals, not cloned courses. |
+| **Canon** | One active version per topic; full revision history kept as a version lake. |
+| **Coach** | Daily plan, hints, error analysis, adaptive difficulty. |
 
-Individual learning paths are **routes over shared content**, not cloned courses per user.
+AI generates and refines content from aggregated user practice data. The graph improves as the user base grows.
 
-### Architecture (bootstrap)
+### Architecture
 
-See diagram and stack in the Russian section above (identical).
+Laravel 13 monolith with DDD modules. See:
 
-- **Postgres 16** + `pgvector` — graph, canon, progress, embeddings
-- **Redis 7** — queues and cache
-- **Monorepo** — all services in one repository
+- [docs/architecture.md](docs/architecture.md) — topology, stack, modules, data flows
+- [docs/data-model.md](docs/data-model.md) — schema and ERD
+- [docs/adr/](docs/adr/) — decision records
 
-See [docs/architecture.md](docs/architecture.md) and [docs/adr/](docs/adr/) for details.
+### Stack
 
-### Repository layout
+- **Backend:** Laravel 13 + Sail (PHP 8.3)
+- **Frontend:** Vue 3 + Quasar — separate repository; builds for web / PWA / desktop / mobile
+- **Auth:** Laravel Sanctum + spatie/laravel-permission
+- **Data stores:** MySQL 8, Qdrant (vectors), Meilisearch (full-text), Redis 7
+- **LLM:** Ollama locally, behind the `LlmDriver` abstraction ([ADR-0006](docs/adr/0006-llm-driver-abstraction.md))
+- **Code execution:** Judge0
+- **Real-time:** Laravel Reverb
+- **Admin UI:** Filament 3
 
-Same tree as in the Russian section.
+### Requirements
 
-### Prerequisites
-
-Docker, Make, Git; optional local runtimes: PHP 8.3, Node 24, Python 3.13, Go 1.26.
-
-### Quick start
-
-```bash
-git clone https://github.com/hopelessness-7/evolv.git
-cd evolv
-cp .env.example .env
-# Edit .env — set POSTGRES_PASSWORD, INTERNAL_SERVICE_TOKEN, JWT secrets
-
-make up
-make migrate
-make smoke
-```
-
-### Make targets
-
-| Command | Description |
-|---------|-------------|
-| `make up` | Start all services |
-| `make down` | Stop containers |
-| `make logs` | Follow logs |
-| `make migrate` | Run DB migrations |
-| `make seed` | Seed dev data |
-| `make test` | Run all service tests |
-| `make build-sandbox` | Build `evolv/node-learn` image |
-| `make smoke` | End-to-end health check |
-
-### Stack versions
-
-PHP 8.3, Laravel 13, Node 24 LTS, NestJS 11, Python 3.13, FastAPI 0.115+, Go 1.26, Postgres 16, Redis 7.
+- Docker Desktop / Docker Engine + Compose v2
+- Make (optional)
+- Git
 
 ### License
 

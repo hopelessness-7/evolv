@@ -10,64 +10,106 @@
 
 ### Видение
 
-Evolv — **живой учебник**: граф знаний, который подстраивается под ученика и сам обновляется при смене технологий. Это не линейная последовательность видео, как на Coursera или Stepik.
+Evolv — самообучающаяся ИИ-платформа для освоения навыков, в первую очередь программирования. Это не чат-бот и не статичный курс: один общий граф знаний, по которому система прокладывает персональные маршруты, а ИИ постепенно достраивает и уточняет контент по результатам реальной практики пользователей.
 
-### Логические сервисы
+### Топология
 
-| Сервис | Стек | Зона ответственности |
-|--------|------|----------------------|
-| **gateway** | NestJS 11, Node 24 | Публичный API: регистрация, вход, JWT, прокси в core |
-| **core** | Laravel 13, PHP 8.3 | Граф учебного плана, канон контента, прогресс, оркестрация Coach |
-| **llm-worker** | FastAPI, Python 3.13 | Эмбеддинги, batch-генерация, вызовы Ollama/API |
-| **practice-runner** | Go 1.26 | Docker-песочницы по запросу, тесты, idle shutdown |
-| **nginx** | nginx 1.27 | Reverse proxy, TLS (prod) |
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Клиенты                                                      │
+│  Quasar (web / PWA / Electron / Capacitor)                    │
+│  Python desktop (после MVP)                                   │
+└──────────────────────────────────────────────────────────────┘
+                            │ HTTPS, Sanctum tokens
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Laravel 13 монолит (Sail)                                    │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ app/Modules/                                            │  │
+│  │   Identity   Onboarding   Curriculum   Content          │  │
+│  │   LearningPath   Practice   AI   Admin (Filament)       │  │
+│  └────────────────────────────────────────────────────────┘  │
+│   queue workers · scheduler · Reverb (WebSocket)              │
+└──────────────────────────────────────────────────────────────┘
+        │            │             │             │
+        ▼            ▼             ▼             ▼
+   ┌────────┐   ┌────────┐   ┌──────────┐   ┌────────┐
+   │ MySQL  │   │ Redis  │   │  Qdrant  │   │ Meili- │
+   │  8     │   │  7     │   │          │   │ search │
+   └────────┘   └────────┘   └──────────┘   └────────┘
+        │                                          ▲
+        ▼                                          │
+   ┌────────┐                                ┌─────────┐
+   │ Judge0 │                                │ Ollama  │
+   └────────┘                                └─────────┘
+```
 
-Позже (не в bootstrap): **interview** (mock-собесы), отдельный **jobs**-воркер для актуализации канона.
+### Стек
 
-### Хранилища данных
+| Слой | Инструмент | Назначение |
+|------|------------|------------|
+| Web framework | Laravel 13 + Sail | Бэкенд-монолит |
+| Frontend | Vue 3 + Quasar | Web + PWA + Electron + Capacitor (отдельный репо) |
+| Auth | Laravel Sanctum + spatie/laravel-permission | Токены + RBAC |
+| Реляционная БД | MySQL 8 | Основные данные, граф (recursive CTE) |
+| Векторы | Qdrant | Эмбеддинги контента, RAG-документация |
+| Полнотекст | Meilisearch + Laravel Scout | Поиск по контенту/курсам |
+| Кэш, очереди, broadcasting | Redis 7 | Стандарт Laravel |
+| Real-time | Laravel Reverb | WebSocket-сервер |
+| LLM | Ollama (MVP) через `LlmDriver` | Эмбеддинги + чат |
+| Выполнение кода | Judge0 | Sandboxed code runners |
+| Email (dev) | Mailpit | SMTP-перехват |
+| Файлы (dev) | MinIO | S3-совместимое хранилище |
+| Админ-панель | Filament 3 | CRUD + дашборды |
+| Отладка (dev) | Laravel Telescope | Inspector запросов |
+| Мониторинг (prod) | Laravel Pulse | Application performance |
 
-**Postgres** (один инстанс, несколько доменов):
+См. также: [adr/0002-data-stores.md](adr/0002-data-stores.md).
 
-1. **Граф учебного плана** — `knowledge_nodes`, `knowledge_edges` (REQUIRES, RELATED_TO, IS_NEW_VERSION_OF). Обход — recursive CTE; Neo4j на MVP нет.
-2. **Канон + озеро версий** — `content_versions`, `content_atoms` с `vector(768)` для дедупа и похожести.
-3. **Профиль компетенций** — `user_skills`, `user_progress`, `attempts`, `srs_cards`.
-4. **Пользователи** — таблица `users` у **gateway** (схема `auth`).
+### Доменные модули
 
-**Redis** — очереди Laravel (core), BullMQ (gateway, опционально), arq (llm-worker), очередь `evolv:llm:jobs`.
+| Модуль | Ответственность |
+|--------|-----------------|
+| **Identity** | Регистрация, вход, профиль, роли, Sanctum-токены |
+| **Onboarding** | Захват цели, уровня, бюджета времени и стиля обучения |
+| **Curriculum** | Граф знаний (узлы, рёбра REQUIRES / RELATED_TO / IS_NEW_VERSION_OF), `GraphRepository` |
+| **Content** | Канон, версии, атомы (теория / сниппет / квиз), индексирование в Qdrant и Meilisearch |
+| **LearningPath** | Персональный маршрут поверх общего графа, прогресс, рекомендации следующего шага |
+| **Practice** | Задачи практики, отправка в Judge0, разбор результата, attempts, error_tags |
+| **AI** | `LlmDriver`, генерация уроков, RAG-пайплайн, обогащение контента из агрегированных ошибок |
+| **Admin** | Filament-панель: модерация, дашборды, конфиг |
 
-**Ollama** — локально для dev (embeddings, chat); в prod — API или гибрид.
+Граница между модулями — публичные сервисы (контракты). Прямой доступ к моделям чужого модуля запрещён.
 
-### Потоки запросов
+### Потоки данных
 
-**Авторизованный API:** Client → nginx → gateway (JWT) → core `/v1/*` (заголовки `X-User-Id`, `X-Internal-Token`) → Postgres.
+**Регистрация и онбординг:**
+Client → Sanctum (`Identity`) → `Onboarding` сохраняет цели → выпуск личного маршрута (`LearningPath`).
 
-**Практика:** Client → gateway → core → practice-runner → контейнер `evolv/node-learn` → jest → запись `attempts` в core.
+**Открытие урока:**
+Client → `LearningPath` (текущий шаг) → `Content` отдаёт активную версию атомов узла → ответ.
 
-**LLM (async):** core → Redis → llm-worker → Ollama → обновление `content_atoms` / embeddings.
+**Практика:**
+Client отправляет код → `Practice` → Judge0 → результат + AI-разбор ошибок (`AI`) → запись `attempts` → обновление `user_skills` и `srs_cards`.
 
-### Безопасность
+**AI-обогащение контента (асинхронно):**
+Cron / queue → `AI` агрегирует `attempts.error_tags` → запрашивает LLM сгенерировать дополнительные атомы → новая `content_version` (статус `draft`) → ручная или авто-промоция в `active`.
 
-- **core** не проброшен на хост — снаружи только nginx и gateway.
-- `INTERNAL_SERVICE_TOKEN` обязателен для вызовов gateway ↔ core и core ↔ runner.
-- Песочницы: non-root, лимиты CPU/RAM, `network=none` на MVP.
-- JWT: access 15 мин, refresh 7 дней, секреты только в `.env`.
+**Поиск:**
+Запись/обновление атома → job в Meilisearch и эмбеддинг → Qdrant.
 
-### Сеть Docker Compose
+### Окружение
 
-- `evolv_public` — nginx, gateway (:80)
-- `evolv_internal` — core, llm-worker, practice-runner, postgres, redis, ollama
+Локально всё поднимается одной командой Sail. Состав compose: laravel-app, mysql, redis, qdrant, meilisearch, judge0, ollama, mailpit, minio, reverb (отдельный процесс), queue worker(ы).
 
-`practice-runner` монтирует `docker.sock` (см. ADR-0005).
+### Что вне MVP
 
-### Откладываем на потом
-
-Frontend, Neo4j replica, Kubernetes, CI/CD, TLS prod, interview, биллинг, gVisor/Kata.
+Учительские курсы, группы, домашка, нотификации, расписание сессий, портфолио, git-экспорт, биллинг, мобильные сборки, Python-десктоп, OPS-стек (Grafana/Prometheus/Loki), Neo4j.
 
 ### Связанные документы
 
-- [data-model.md](data-model.md)
-- [adr/](adr/)
-- [api/](api/)
+- [data-model.md](data-model.md) — таблицы и связи
+- [adr/](adr/) — обоснования решений
 
 ---
 
@@ -77,44 +119,49 @@ Frontend, Neo4j replica, Kubernetes, CI/CD, TLS prod, interview, биллинг,
 
 ### Vision
 
-Evolv is a **living textbook**: a knowledge graph that adapts to the learner and self-updates when technology changes. It is not a static sequence of videos like Coursera or Stepik.
+Evolv is a self-evolving AI-powered skill learning platform, primarily for software development. It is neither a chatbot nor a static course catalog: one shared knowledge graph, with personalised routes per learner, refined and extended by AI from aggregated practice data.
 
-### Logical services
+### Topology
 
-| Service | Stack | Responsibility |
-|---------|-------|----------------|
-| **gateway** | NestJS 11, Node 24 | Public API edge: registration, login, JWT, proxy to core |
-| **core** | Laravel 13, PHP 8.3 | Curriculum graph, content canon, user progress, coach orchestration |
-| **llm-worker** | FastAPI, Python 3.13 | Embeddings, batch generation, Ollama/API calls |
-| **practice-runner** | Go 1.26 | On-demand Docker sandboxes, test execution, idle shutdown |
-| **nginx** | nginx 1.27 | Reverse proxy, TLS termination (prod) |
+See the diagram in the Russian section — identical.
 
-Future (not in bootstrap): **interview**, dedicated **jobs** worker for canon refresh.
+### Stack
 
-### Data stores
+| Layer | Tool | Purpose |
+|-------|------|---------|
+| Web framework | Laravel 13 + Sail | Backend monolith |
+| Frontend | Vue 3 + Quasar | Web/PWA/Electron/Capacitor (separate repo) |
+| Auth | Sanctum + spatie/laravel-permission | Tokens + RBAC |
+| Relational DB | MySQL 8 | Domain data, graph via recursive CTE |
+| Vector | Qdrant | Content embeddings, RAG |
+| Full-text | Meilisearch + Scout | Content/course search |
+| Cache, queues, broadcast | Redis 7 | Laravel default |
+| Real-time | Laravel Reverb | WebSocket |
+| LLM | Ollama (MVP) via `LlmDriver` | Embeddings + chat |
+| Code execution | Judge0 | Sandboxed runners |
+| Email (dev) | Mailpit | SMTP capture |
+| Files (dev) | MinIO | S3-compatible |
+| Admin panel | Filament 3 | CRUD + dashboards |
+| Debug (dev) | Laravel Telescope | Request inspector |
+| Monitoring (prod) | Laravel Pulse | App performance |
 
-**Postgres:** curriculum graph, content canon + version lake, competency profile; **auth.users** owned by gateway.
+### Domain modules
 
-**Redis:** Laravel queues, optional BullMQ, arq queue `evolv:llm:jobs`.
+`Identity`, `Onboarding`, `Curriculum`, `Content`, `LearningPath`, `Practice`, `AI`, `Admin`. Cross-module access only via public services.
 
-**Ollama:** local dev embeddings/chat; production API or hybrid.
+### Data flows
 
-### Request flows
+Registration/onboarding, lesson opening, practice submission, async AI content enrichment, and search indexing — same as Russian section.
 
-Authenticated API, practice session, and async LLM job — same diagrams as in the Russian section.
+### Environment
 
-### Security boundaries
+Single Sail compose: laravel-app, mysql, redis, qdrant, meilisearch, judge0, ollama, mailpit, minio, reverb, queue workers.
 
-core not on host ports; internal token required; sandbox limits; JWT lifetimes in `.env`.
+### Out of MVP scope
 
-### Network
-
-`evolv_public` / `evolv_internal`; practice-runner uses docker.sock (ADR-0005).
-
-### Deferred
-
-Frontend, Neo4j replica, K8s, CI/CD, prod TLS, interview, billing, gVisor/Kata.
+Teacher courses, groups, assignments, notifications, scheduling, portfolio, git export, billing, mobile builds, Python desktop, OPS stack (Grafana/Prometheus/Loki), Neo4j.
 
 ### Related documents
 
-[data-model.md](data-model.md), [adr/](adr/), [api/](api/).
+- [data-model.md](data-model.md)
+- [adr/](adr/)

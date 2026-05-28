@@ -1,36 +1,30 @@
-# Architecture Decision Records (ADR)
+# Architecture Decision Records
 
-Здесь фиксируются важные архитектурные решения: **почему** выбран тот или иной путь, а не только **что** сделано.
+Records of significant architectural choices: **why** a path was chosen, not only **what**.
 
-Records of significant architectural choices so future contributors understand **why**, not only **what**.
+## Format
 
-## Формат / Format
+```
+NNNN-short-title.md
 
-Файл: `NNNN-short-title.md`
-
-```markdown
 # NNNN. Title
-
-- **Status:** Proposed | Accepted | Deprecated | Superseded by ADR-XXXX
-- **Date:** YYYY-MM-DD
+- Status: Proposed | Accepted | Deprecated | Superseded by ADR-XXXX
+- Date: YYYY-MM-DD
 
 ## Русский
-### Контекст
-### Решение
-### Последствия
+### Контекст / ### Решение / ### Последствия
 
 ## English
-### Context
-### Decision
-### Consequences
+### Context / ### Decision / ### Consequences
 ```
 
-## Индекс / Index
+## Index
 
-| ADR | RU | EN |
-|-----|----|----|
-| [0001](0001-monorepo.md) | Монорепо | Monorepo |
-| [0002](0002-hybrid-microservices.md) | Гибридные микросервисы | Hybrid microservices |
-| [0003](0003-postgres-pgvector-over-neo4j.md) | Postgres вместо Neo4j | Postgres over Neo4j |
-| [0004](0004-auth-on-gateway.md) | Auth на gateway | Auth on gateway |
-| [0005](0005-sandbox-isolation-strategy.md) | Изоляция песочниц | Sandbox isolation |
+| ADR | Title |
+|-----|-------|
+| [0001](0001-monolith-ddd.md) | Монолит с DDD-модулями / Monolith with DDD modules |
+| [0002](0002-data-stores.md) | Хранилища данных / Data stores |
+| [0003](0003-auth-sanctum.md) | Аутентификация через Sanctum / Auth via Sanctum |
+| [0004](0004-code-execution-judge0.md) | Выполнение кода через Judge0 / Code execution via Judge0 |
+| [0005](0005-admin-filament.md) | Админ-панель на Filament / Admin panel on Filament |
+| [0006](0006-llm-driver-abstraction.md) | LLM через абстракцию драйверов / LLM via driver abstraction |

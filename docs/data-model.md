@@ -1,10 +1,153 @@
 # Evolv — Модель данных / Data model (MVP)
 
-Postgres 16, расширения: `vector`, `pg_trgm`.
-
-Схемы: `auth` (gateway), `public` (домен core). На bootstrap — **раздельные схемы** для явного владения данными.
+MySQL 8 — основные данные. Qdrant — векторы атомов и RAG-документация. Meilisearch — полнотекстовые индексы (производные от MySQL).
 
 **Languages:** [Русский](#русский) · [English](#english)
+
+---
+
+## ERD
+
+```mermaid
+erDiagram
+    users {
+        bigint id PK
+        varchar email UK
+        varchar password
+        varchar name
+        timestamp email_verified_at
+        timestamps timestamps
+    }
+
+    user_onboarding {
+        bigint id PK
+        bigint user_id FK
+        varchar goal_track
+        varchar experience_level
+        smallint daily_minutes
+        varchar style
+        json answers
+        timestamp completed_at
+        timestamps timestamps
+    }
+
+    knowledge_nodes {
+        bigint id PK
+        varchar slug UK
+        varchar track
+        varchar title
+        text summary
+        varchar status
+        timestamps timestamps
+    }
+
+    knowledge_edges {
+        bigint from_node_id PK_FK
+        bigint to_node_id PK_FK
+        varchar kind PK
+    }
+
+    content_versions {
+        bigint id PK
+        bigint node_id FK
+        int version_no
+        bigint parent_version_id FK
+        varchar status
+        bigint created_by_user_id FK
+        timestamps timestamps
+    }
+
+    content_atoms {
+        bigint id PK
+        bigint version_id FK
+        varchar kind
+        text body_md
+        json meta
+        int order_in_version
+        varchar qdrant_point_id
+        timestamps timestamps
+    }
+
+    learning_plans {
+        bigint id PK
+        bigint user_id FK
+        varchar track
+        varchar status
+        timestamp activated_at
+        timestamps timestamps
+    }
+
+    learning_plan_steps {
+        bigint id PK
+        bigint plan_id FK
+        bigint node_id FK
+        int order_in_plan
+        varchar status
+        timestamp completed_at
+    }
+
+    user_skills {
+        bigint id PK
+        bigint user_id FK
+        bigint node_id FK
+        smallint mastery
+        timestamp last_practiced_at
+        timestamps timestamps
+    }
+
+    attempts {
+        bigint id PK
+        bigint user_id FK
+        bigint node_id FK
+        varchar kind
+        json payload
+        varchar verdict
+        json error_tags
+        int duration_ms
+        json judge0_response
+        timestamp created_at
+    }
+
+    srs_cards {
+        bigint id PK
+        bigint user_id FK
+        bigint node_id FK
+        timestamp due_at
+        decimal ease
+        int interval_days
+        int repetitions
+        timestamps timestamps
+    }
+
+    ai_generation_jobs {
+        bigint id PK
+        varchar kind
+        json input
+        varchar status
+        bigint result_version_id FK
+        text error
+        timestamps timestamps
+    }
+
+    users ||--o| user_onboarding : "fills"
+    users ||--o{ learning_plans : "owns"
+    learning_plans ||--o{ learning_plan_steps : "contains"
+    knowledge_nodes ||--o{ learning_plan_steps : "referenced by"
+    knowledge_nodes ||--o{ knowledge_edges : "from"
+    knowledge_nodes ||--o{ knowledge_edges : "to"
+    knowledge_nodes ||--o{ content_versions : "has versions"
+    content_versions ||--o{ content_atoms : "contains"
+    content_versions }o--o| content_versions : "parent"
+    users ||--o{ user_skills : "tracks"
+    knowledge_nodes ||--o{ user_skills : "mastered in"
+    users ||--o{ attempts : "submits"
+    knowledge_nodes ||--o{ attempts : "attempted in"
+    users ||--o{ srs_cards : "owns"
+    knowledge_nodes ||--o{ srs_cards : "scheduled for"
+    content_versions ||--o{ ai_generation_jobs : "produced by"
+```
+
+Роли и права хранит `spatie/laravel-permission` в своих стандартных таблицах (`roles`, `permissions`, `model_has_roles`, `role_has_permissions`).
 
 ---
 
@@ -12,105 +155,95 @@ Postgres 16, расширения: `vector`, `pg_trgm`.
 
 ## Русский
 
-### Схема `auth` (gateway)
+### Группы таблиц
 
-#### `auth.users`
+| Группа | Таблицы | Модуль-владелец |
+|--------|---------|-----------------|
+| Идентификация | `users`, `roles`, `permissions`, ... | Identity |
+| Цели пользователя | `user_onboarding` | Onboarding |
+| Граф знаний | `knowledge_nodes`, `knowledge_edges` | Curriculum |
+| Контент (канон + версии) | `content_versions`, `content_atoms` | Content |
+| Маршрут обучения | `learning_plans`, `learning_plan_steps` | LearningPath |
+| Прогресс и практика | `user_skills`, `attempts`, `srs_cards` | LearningPath / Practice |
+| AI-задачи | `ai_generation_jobs` | AI |
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| id | uuid PK | `gen_random_uuid()` |
-| email | varchar(255) UNIQUE | логин |
-| password_hash | varchar(255) | bcrypt |
-| name | varchar(255) nullable | отображаемое имя |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
+### Граф знаний
 
----
+`knowledge_edges.kind`:
 
-### Схема `public` (core)
+- `REQUIRES` — для изучения `to_node` нужно сначала пройти `from_node`
+- `RELATED_TO` — связь без жёсткой зависимости
+- `IS_NEW_VERSION_OF` — новая редакция узла, не меняя `slug`
 
-#### `knowledge_nodes`
+Поиск зависимостей — recursive CTE по `knowledge_edges`. На объёмах MVP (сотни узлов на трек) — мгновенно.
 
-Атом знания в графе (не «курс»).
+### Канон и версии
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| id | uuid PK | |
-| slug | varchar(128) UNIQUE | напр. `node-js-closures` |
-| track | varchar(64) | напр. `node-backend` |
-| title | varchar(255) | заголовок |
-| summary | text nullable | краткое описание |
-| status | varchar(32) | `draft`, `published`, `archived` |
-| created_at, updated_at | timestamptz | |
+Один `node_id` имеет несколько `content_versions`, среди которых не более одной с `status = 'active'` (партишал unique индекс). Канон = active-версия. Озеро версий хранит drafts, archived, и AI-сгенерированные drafts до промоции.
 
-#### `knowledge_edges`
+`content_atoms` принадлежат конкретной версии (`version_id`), не узлу напрямую. Это упрощает откат и сравнение версий. Поле `qdrant_point_id` ссылается на точку в коллекции Qdrant — векторы хранятся там, не в MySQL.
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| from_node_id, to_node_id | uuid FK | |
-| kind | varchar(32) | `REQUIRES` (нужно знать до), `RELATED_TO`, `IS_NEW_VERSION_OF` |
+### Маршрут пользователя
 
-#### `content_versions`
+`learning_plans` — текущий активный план для одного трека. Шаги (`learning_plan_steps`) — упорядоченный список узлов из графа, статусы (`locked`/`available`/`in_progress`/`completed`) считаются динамически по `user_skills` и зависимостям графа, но кэшируются в `learning_plan_steps.status` для быстрого UI.
 
-Запись в озере версий для узла.
+Пользователь может иметь несколько планов (учу Node параллельно с SQL), но активный одновременно — один на трек.
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| node_id | uuid FK | |
-| version_no | int | монотонно для узла |
-| parent_version_id | uuid nullable | линия merge |
-| status | varchar(32) | `draft`, `active`, `archived` |
+### Практика и навыки
 
-Один `active` на `node_id` (partial unique).
+`attempts.error_tags` — JSON-массив строковых тегов (`confuses_var_let`, `mutates_state`, ...). На MVP — простой массив; позже можно эволюционировать в нормализованную таблицу.
 
-#### `content_atoms`
+`user_skills.mastery` — 0–100, обновляется по результатам attempts (формула — отдельная стратегия в `LearningPath`).
 
-Единица материала (теория, сниппет, квиз).
+`srs_cards` — SM-2: `due_at`, `ease`, `interval_days`, `repetitions`.
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| kind | varchar(32) | `theory`, `snippet`, `quiz` |
-| body_md | text | Markdown |
-| meta | jsonb | опции квиза, язык сниппета |
-| embedding | vector(768) | дедуп / похожесть |
+### AI-задачи
 
-#### `user_progress`
+`ai_generation_jobs` — outbox для async LLM-генерации:
 
-Состояние пользователя на узле: `locked`, `available`, `in_progress`, `completed`.
+- `kind` — `lesson_generation`, `quiz_generation`, `error_analysis`, ...
+- `input` — JSON с параметрами
+- `status` — `queued` / `running` / `succeeded` / `failed`
+- `result_version_id` — на новую `content_versions`, если генерация создала контент
 
-#### `user_skills`
+Очередь Laravel дёргает соответствующий job-класс, тот вызывает `LlmDriver` через модуль `AI`.
 
-Мастерство 0–100, `last_practiced_at` — вход для кривой забывания.
+### Индексы (MVP)
 
-#### `attempts`
+| Таблица | Индекс |
+|---------|--------|
+| `knowledge_nodes` | UNIQUE `slug` |
+| `knowledge_edges` | INDEX `(from_node_id, kind)` |
+| `content_versions` | UNIQUE `(node_id)` WHERE `status='active'` (партишал) |
+| `content_atoms` | INDEX `(version_id, order_in_version)` |
+| `learning_plans` | UNIQUE `(user_id, track)` WHERE `status='active'` |
+| `learning_plan_steps` | INDEX `(plan_id, order_in_plan)` |
+| `user_skills` | UNIQUE `(user_id, node_id)` |
+| `srs_cards` | INDEX `(user_id, due_at)` |
+| `attempts` | INDEX `(user_id, created_at)` |
 
-Попытка практики: `payload` (код/SQL), `verdict`, `error_tags` (вектор ошибки, напр. `confuses_var_let`).
+### Что вне MySQL
 
-#### `srs_cards`
+| Данные | Где живут |
+|--------|-----------|
+| Векторы атомов контента | Qdrant, коллекция `content_atoms`, dim=768 |
+| Векторы RAG-документации | Qdrant, коллекция `docs` |
+| Поисковые индексы | Meilisearch, индексы `nodes`, `content` |
+| Сессии, broadcast, кэш | Redis |
+| Файлы (аватары, аттачи) | MinIO (dev) / S3 (prod) |
 
-Интервальное повторение (SM-2): `due_at`, `ease`, `interval_days`.
+### Объёмы на MVP (ориентир)
 
-### Пример обхода графа
-
-```sql
-WITH RECURSIVE reachable AS (
-  SELECT id FROM knowledge_nodes WHERE slug = 'node-js-basics'
-  UNION
-  SELECT e.to_node_id
-  FROM knowledge_edges e
-  JOIN reachable r ON e.from_node_id = r.id
-  WHERE e.kind = 'REQUIRES'
-)
-SELECT * FROM knowledge_nodes WHERE id IN (SELECT id FROM reachable);
-```
-
-### Эмбеддинги
-
-Модель `nomic-embed-text` (768), индекс ivfflat после наполнения данными.
-
-### Сиды
-
-[shared/seeds/node-track.json](../shared/seeds/node-track.json) — заглушка трека Node (полный граф — в фазе контента).
+| Таблица | Порядок строк |
+|---------|---------------|
+| `users` | 10² |
+| `knowledge_nodes` | 10² на трек × 1–3 трека |
+| `knowledge_edges` | ~2–3× от nodes |
+| `content_versions` | ~1.5× от nodes |
+| `content_atoms` | 10³–10⁴ |
+| `learning_plan_steps` | users × ~50 |
+| `attempts` | 10⁵+ при активной практике |
+| `srs_cards` | users × active nodes |
 
 ---
 
@@ -118,30 +251,38 @@ SELECT * FROM knowledge_nodes WHERE id IN (SELECT id FROM reachable);
 
 ## English
 
-### Schema `auth` (gateway)
+### Table groups
 
-#### `auth.users`
+| Group | Tables | Owner module |
+|-------|--------|--------------|
+| Identity | `users`, permission tables | Identity |
+| User intent | `user_onboarding` | Onboarding |
+| Knowledge graph | `knowledge_nodes`, `knowledge_edges` | Curriculum |
+| Content canon + versions | `content_versions`, `content_atoms` | Content |
+| Learning route | `learning_plans`, `learning_plan_steps` | LearningPath |
+| Progress and practice | `user_skills`, `attempts`, `srs_cards` | LearningPath / Practice |
+| AI workflows | `ai_generation_jobs` | AI |
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | `gen_random_uuid()` |
-| email | varchar(255) UNIQUE | login identifier |
-| password_hash | varchar(255) | bcrypt |
-| name | varchar(255) nullable | display name |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
+### Knowledge graph
 
-### Schema `public` (core)
+`knowledge_edges.kind`: `REQUIRES`, `RELATED_TO`, `IS_NEW_VERSION_OF`. Traversal via MySQL recursive CTE; sufficient for MVP scale.
 
-Same tables as above. Key concepts:
+### Canon and versions
 
-- **knowledge_nodes** — atomic topic, not a course
-- **knowledge_edges** — REQUIRES, RELATED_TO, IS_NEW_VERSION_OF
-- **content_versions / content_atoms** — canon + version lake, optional `vector(768)`
-- **user_progress / user_skills** — route and mastery
-- **attempts** — practice with `error_tags` vector
-- **srs_cards** — spaced repetition (SM-2)
+One active `content_version` per `node_id` (partial unique). Atoms belong to a specific version. `qdrant_point_id` references the embedding point in Qdrant.
 
-Graph traversal SQL and embeddings — identical to the Russian section.
+### User route
 
-Seed stub: [shared/seeds/node-track.json](../shared/seeds/node-track.json).
+`learning_plans` — one active plan per track per user; `learning_plan_steps` cache statuses for UI but are recomputable from `user_skills` and graph edges.
+
+### Practice and skills
+
+`attempts.error_tags` is a JSON array of string tags. `user_skills.mastery` (0–100) updates from attempts. `srs_cards` implements SM-2.
+
+### AI jobs
+
+`ai_generation_jobs` is the outbox for async LLM-driven content generation, processed by Laravel queue workers calling `LlmDriver`.
+
+### Indexes, external stores, and volumes
+
+Same as the Russian section.

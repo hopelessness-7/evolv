@@ -4,6 +4,10 @@
 .env.*.local
 !.env.example
 
+# Local-only guides and personal notes (never committed)
+.guides/
+.notes/
+
 # OS / IDE
 .DS_Store
 Thumbs.db
@@ -13,52 +17,34 @@ Thumbs.db
 *.swo
 *~
 
-# Docker
-docker-compose.override.yml
-# Рабочий compose создаёшь сам из example; example коммитим
-# docker-compose.yml — коммитить после настройки (локальные override — нет)
-
 # Logs
 *.log
 logs/
 storage/logs/
 
-# PHP / Laravel (services/core)
-services/core/vendor/
-services/core/node_modules/
-services/core/.phpunit.result.cache
-services/core/storage/*.key
-services/core/public/hot
-services/core/public/storage
-services/core/bootstrap/cache/*.php
+# PHP / Laravel (backend root will be created later via Sail)
+backend/vendor/
+backend/node_modules/
+backend/.phpunit.result.cache
+backend/storage/*.key
+backend/public/hot
+backend/public/storage
+backend/bootstrap/cache/*.php
+backend/.env
 
-# Node / NestJS (services/gateway)
-services/gateway/node_modules/
-services/gateway/dist/
-services/gateway/coverage/
-services/gateway/.env
+# Quasar / Vue frontend (separate repo, but in case of monorepo layout)
+frontend/node_modules/
+frontend/dist/
+frontend/.quasar/
 
-# Python (services/llm-worker)
-services/llm-worker/.venv/
-services/llm-worker/__pycache__/
-services/llm-worker/*.pyc
-services/llm-worker/.pytest_cache/
-services/llm-worker/.mypy_cache/
-services/llm-worker/.ruff_cache/
+# Docker / build artifacts
+docker-compose.override.yml
 
-# Go (services/practice-runner)
-services/practice-runner/bin/
-services/practice-runner/tmp/
-services/practice-runner/*.exe
-services/practice-runner/*.test
-services/practice-runner/vendor/
-
-# Sandbox build artifacts
-sandbox-images/**/node_modules/
-
-# Shared / misc
-*.sqlite
-*.sqlite-journal
-.phpunit.cache
+# Test / coverage
 coverage/
 .nyc_output/
+.phpunit.cache
+
+# Misc
+*.sqlite
+*.sqlite-journal
