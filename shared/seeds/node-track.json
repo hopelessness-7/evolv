@@ -1,0 +1,69 @@
+{
+  "track": "node-backend",
+  "version": "0.1.0-stub",
+  "description": "Заглушка графа для MVP — полный контент в фазе контента / Stub seed for MVP graph — full content in content phase",
+  "nodes": [
+    {
+      "slug": "node-runtime-basics",
+      "title": "Node.js runtime basics",
+      "title_ru": "Основы runtime Node.js",
+      "summary": "Event loop, modules, npm",
+      "summary_ru": "Event loop, модули, npm",
+      "status": "draft"
+    },
+    {
+      "slug": "js-async-await",
+      "title": "Async/await and Promises",
+      "title_ru": "Async/await и Promises",
+      "summary": "Asynchronous JavaScript in Node",
+      "summary_ru": "Асинхронный JavaScript в Node",
+      "status": "draft"
+    },
+    {
+      "slug": "node-http-server",
+      "title": "HTTP server with built-in http",
+      "title_ru": "HTTP-сервер на встроенном http",
+      "summary": "Request/response, routing basics",
+      "summary_ru": "Запрос/ответ, основы маршрутизации",
+      "status": "draft"
+    },
+    {
+      "slug": "express-fundamentals",
+      "title": "Express fundamentals",
+      "title_ru": "Основы Express",
+      "summary": "Middleware, routing, error handling",
+      "summary_ru": "Middleware, маршруты, обработка ошибок",
+      "status": "draft"
+    },
+    {
+      "slug": "node-closures",
+      "title": "Closures in JavaScript",
+      "title_ru": "Замыкания в JavaScript",
+      "summary": "Lexical scope and closures",
+      "summary_ru": "Лексическая область видимости и замыкания",
+      "status": "draft"
+    }
+  ],
+  "edges": [
+    {
+      "from": "node-runtime-basics",
+      "to": "js-async-await",
+      "kind": "REQUIRES"
+    },
+    {
+      "from": "js-async-await",
+      "to": "node-http-server",
+      "kind": "REQUIRES"
+    },
+    {
+      "from": "node-http-server",
+      "to": "express-fundamentals",
+      "kind": "REQUIRES"
+    },
+    {
+      "from": "node-runtime-basics",
+      "to": "node-closures",
+      "kind": "RELATED_TO"
+    }
+  ]
+}
