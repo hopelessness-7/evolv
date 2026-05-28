@@ -1,50 +1,60 @@
-# Environment
-.env
-.env.local
-.env.*.local
-!.env.example
-
-# Local-only guides and personal notes (never committed)
+# === Local-only guides and personal notes (never committed) ===
 .guides/
 .notes/
 
-# OS / IDE
+# === Environment ===
+.env
+.env.backup
+.env.local
+.env.production
+.env.*.local
+!.env.example
+
+# === Composer / Node / build artifacts ===
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/public/fonts-manifest.dev.json
+/storage/*.key
+/storage/pail
+auth.json
+Homestead.json
+Homestead.yaml
+
+# === Laravel cache and test artifacts ===
+/.phpunit.cache
+.phpunit.result.cache
+.phpactor.json
+_ide_helper.php
+coverage/
+.nyc_output/
+
+# === Local SQLite (transitional — Sail step switches to MySQL) ===
+/database/*.sqlite
+/database/*.sqlite-journal
+*.sqlite
+*.sqlite-journal
+
+# === OS ===
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
+
+# === Editors and IDEs ===
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.vscode
+/.zed
 *.swp
 *.swo
 *~
 
-# Logs
-*.log
-logs/
-storage/logs/
-
-# PHP / Laravel (backend root will be created later via Sail)
-backend/vendor/
-backend/node_modules/
-backend/.phpunit.result.cache
-backend/storage/*.key
-backend/public/hot
-backend/public/storage
-backend/bootstrap/cache/*.php
-backend/.env
-
-# Quasar / Vue frontend (separate repo, but in case of monorepo layout)
-frontend/node_modules/
-frontend/dist/
-frontend/.quasar/
-
-# Docker / build artifacts
+# === Docker dev overrides ===
 docker-compose.override.yml
 
-# Test / coverage
-coverage/
-.nyc_output/
-.phpunit.cache
-
-# Misc
-*.sqlite
-*.sqlite-journal
+# === Logs ===
+*.log
+logs/
