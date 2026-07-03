@@ -1,0 +1,17 @@
+<?php
+
+use App\Modules\Auth\Http\Controllers\LoginController;
+use App\Modules\Auth\Http\Controllers\LogoutController;
+use App\Modules\Auth\Http\Controllers\MeController;
+use App\Modules\Auth\Http\Controllers\RegisterController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('auth')->name('auth.')->group(function () {
+    Route::post('/register', RegisterController::class)->name('register');
+    Route::post('/login', LoginController::class)->name('login');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', LogoutController::class)->name('logout');
+        Route::get('/me', MeController::class)->name('me');
+    });
+});

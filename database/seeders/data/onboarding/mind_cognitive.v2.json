@@ -1,0 +1,94 @@
+{
+  "code": "mind_cognitive",
+  "version": "2.0.0",
+  "pillar": "mind",
+  "tier": "extended",
+  "title": "Когнитивные упражнения",
+  "description": "Память, SRS и типы ментальных задач",
+  "schema": {
+    "questions": [
+      {
+        "id": "memory_concern",
+        "type": "single_select",
+        "label": "Что с памятью беспокоит больше",
+        "options": [
+          { "value": "short_term", "label": "Кратковременная" },
+          { "value": "long_term", "label": "Долговременная" },
+          { "value": "recall_facts", "label": "Запоминание фактов" },
+          { "value": "none", "label": "Скорее тренировка" }
+        ],
+        "required": true
+      },
+      {
+        "id": "srs_experience",
+        "type": "single_select",
+        "label": "Опыт с spaced repetition (Anki и т.п.)",
+        "options": [
+          { "value": "never", "label": "Нет" },
+          { "value": "tried", "label": "Пробовал" },
+          { "value": "uses", "label": "Использую" }
+        ],
+        "required": true
+      },
+      {
+        "id": "exercise_types",
+        "type": "multi_select",
+        "label": "Какие упражнения интересны",
+        "options": [
+          { "value": "flashcards", "label": "Карточки" },
+          { "value": "logic", "label": "Логика / головоломки" },
+          { "value": "recall", "label": "Воспроизведение" },
+          { "value": "association", "label": "Ассоциации" }
+        ],
+        "required": true
+      },
+      {
+        "id": "session_intensity",
+        "type": "single_select",
+        "label": "Желаемая интенсивность",
+        "options": [
+          { "value": "light", "label": "Лёгкая" },
+          { "value": "moderate", "label": "Умеренная" },
+          { "value": "challenging", "label": "Сложная" }
+        ],
+        "required": true
+      },
+      {
+        "id": "daily_cognitive_minutes",
+        "type": "number",
+        "label": "Минут в день на когнитивные упражнения",
+        "min": 5,
+        "max": 60,
+        "required": true
+      },
+      {
+        "id": "learning_context",
+        "type": "single_select",
+        "label": "Где применить память в первую очередь",
+        "options": [
+          { "value": "code_syntax", "label": "Синтаксис / API" },
+          { "value": "concepts", "label": "Концепции" },
+          { "value": "general", "label": "Общая тренировка" }
+        ],
+        "required": true
+      },
+      {
+        "id": "frustration_level",
+        "type": "scale_1_5",
+        "label": "Раздражение от забывания (1-5)",
+        "min": 1,
+        "max": 5,
+        "required": true
+      },
+      {
+        "id": "cognitive_disclaimer",
+        "type": "boolean_ack",
+        "label": "Evolv не заменяет специалиста",
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "mind_cognitive_hint": "Memory focus: {{memory_concern}}. SRS: {{srs_experience}}. Exercise types: {{exercise_types}}. Minutes: {{daily_cognitive_minutes}}."
+  }
+}

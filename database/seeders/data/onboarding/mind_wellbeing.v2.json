@@ -1,0 +1,98 @@
+{
+  "code": "mind_wellbeing",
+  "version": "2.0.0",
+  "pillar": "mind",
+  "tier": "extended",
+  "title": "Wellbeing и самонаблюдение",
+  "description": "Стресс, mood baseline и journal-опыт (не терапия)",
+  "schema": {
+    "questions": [
+      {
+        "id": "stress_frequency",
+        "type": "single_select",
+        "label": "Как часто чувствуешь стресс",
+        "options": [
+          { "value": "rarely", "label": "Редко" },
+          { "value": "sometimes", "label": "Иногда" },
+          { "value": "often", "label": "Часто" },
+          { "value": "daily", "label": "Почти каждый день" }
+        ],
+        "required": true
+      },
+      {
+        "id": "mood_baseline",
+        "type": "scale_1_5",
+        "label": "Среднее настроение (1-5)",
+        "min": 1,
+        "max": 5,
+        "required": true
+      },
+      {
+        "id": "journal_experience",
+        "type": "single_select",
+        "label": "Опыт с дневником / рефлексией",
+        "options": [
+          { "value": "never", "label": "Нет" },
+          { "value": "occasional", "label": "Иногда" },
+          { "value": "regular", "label": "Регулярно" }
+        ],
+        "required": true
+      },
+      {
+        "id": "coping_tools",
+        "type": "multi_select",
+        "label": "Что уже помогает",
+        "options": [
+          { "value": "walk", "label": "Прогулка" },
+          { "value": "breathing", "label": "Дыхание" },
+          { "value": "talk", "label": "Разговор" },
+          { "value": "rest", "label": "Отдых / сон" },
+          { "value": "none", "label": "Пока мало что" }
+        ],
+        "required": true
+      },
+      {
+        "id": "support_need",
+        "type": "single_select",
+        "label": "Какой формат поддержки ближе",
+        "options": [
+          { "value": "self_tracking", "label": "Самонаблюдение" },
+          { "value": "coach_prompts", "label": "Подсказки Coach" },
+          { "value": "professional", "label": "Нужен специалист" }
+        ],
+        "required": true
+      },
+      {
+        "id": "reflection_frequency",
+        "type": "single_select",
+        "label": "Как часто готов рефлексировать",
+        "options": [
+          { "value": "daily", "label": "Ежедневно" },
+          { "value": "weekly", "label": "Раз в неделю" },
+          { "value": "as_needed", "label": "По необходимости" }
+        ],
+        "required": true
+      },
+      {
+        "id": "wellbeing_goal",
+        "type": "single_select",
+        "label": "Главная цель пакета",
+        "options": [
+          { "value": "reduce_stress", "label": "Снизить стресс" },
+          { "value": "mood_awareness", "label": "Лучше понимать себя" },
+          { "value": "balance", "label": "Баланс учёбы и жизни" }
+        ],
+        "required": true
+      },
+      {
+        "id": "wellbeing_disclaimer",
+        "type": "boolean_ack",
+        "label": "Evolv не заменяет терапию и специалиста",
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "mind_wellbeing_hint": "Stress: {{stress_frequency}}. Mood baseline: {{mood_baseline}}. Journal: {{journal_experience}}. Goal: {{wellbeing_goal}}."
+  }
+}

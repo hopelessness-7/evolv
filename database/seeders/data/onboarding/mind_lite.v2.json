@@ -1,0 +1,82 @@
+{
+  "code": "mind_lite",
+  "version": "2.0.0",
+  "pillar": "mind",
+  "tier": "lite",
+  "title": "Фокус, привычки и wellbeing",
+  "description": "Выбор направлений и базовая самооценка",
+  "schema": {
+    "questions": [
+      {
+        "id": "improvement_areas",
+        "type": "multi_select",
+        "label": "Что хочешь улучшить?",
+        "options": [
+          { "value": "focus", "label": "Фокус" },
+          { "value": "memory", "label": "Память" },
+          { "value": "habits", "label": "Привычки" },
+          { "value": "stress", "label": "Стресс" },
+          { "value": "energy", "label": "Энергия" },
+          { "value": "sleep", "label": "Сон" }
+        ],
+        "required": true
+      },
+      {
+        "id": "self_rating_focus",
+        "type": "scale_1_5",
+        "label": "Довольство фокусом (1-5)",
+        "min": 1,
+        "max": 5,
+        "required": true
+      },
+      {
+        "id": "self_rating_energy",
+        "type": "scale_1_5",
+        "label": "Энергия (1-5)",
+        "min": 1,
+        "max": 5,
+        "required": true
+      },
+      {
+        "id": "self_rating_stress",
+        "type": "scale_1_5",
+        "label": "Стресс (1-5)",
+        "min": 1,
+        "max": 5,
+        "required": true
+      },
+      {
+        "id": "routine_stability",
+        "type": "single_select",
+        "label": "Стабильность режима",
+        "options": [
+          { "value": "chaotic", "label": "Хаотичный" },
+          { "value": "somewhat_stable", "label": "Относительно стабильный" },
+          { "value": "stable", "label": "Стабильный" }
+        ],
+        "required": true
+      },
+      {
+        "id": "micro_practices_ready",
+        "type": "single_select",
+        "label": "Готов к микро-практикам?",
+        "options": [
+          { "value": "yes", "label": "Да" },
+          { "value": "later", "label": "Позже" },
+          { "value": "not_sure", "label": "Не уверен" }
+        ],
+        "required": true
+      },
+      {
+        "id": "wellbeing_disclaimer",
+        "type": "boolean_ack",
+        "label": "Evolv не заменяет специалиста",
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "mind_coach_system": "Mind areas: {{improvement_areas}}. Ratings focus/energy/stress: {{self_rating_focus}}/{{self_rating_energy}}/{{self_rating_stress}}. Priority: {{mind_priority}}.",
+    "mind_daily_hint": "Daily micro-practices for {{mind_priority}}, routine {{routine_stability}}."
+  }
+}

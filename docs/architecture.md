@@ -108,6 +108,7 @@ Cron / queue → `AI` агрегирует `attempts.error_tags` → запра�
 
 ### Связанные документы
 
+- [api.md](api.md) — OpenAPI / Swagger UI
 - [data-model.md](data-model.md) — таблицы и связи
 - [adr/](adr/) — обоснования решений
 

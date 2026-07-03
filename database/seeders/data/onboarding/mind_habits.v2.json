@@ -1,0 +1,101 @@
+{
+  "code": "mind_habits",
+  "version": "2.0.0",
+  "pillar": "mind",
+  "tier": "extended",
+  "title": "Привычки и постоянство",
+  "description": "Streaks, триггеры и восстановление после срывов",
+  "schema": {
+    "questions": [
+      {
+        "id": "habit_experience",
+        "type": "single_select",
+        "label": "Опыт с привычками / streaks",
+        "options": [
+          { "value": "none", "label": "Почти нет" },
+          { "value": "some", "label": "Был опыт" },
+          { "value": "active", "label": "Сейчас веду привычки" }
+        ],
+        "required": true
+      },
+      {
+        "id": "longest_streak_days",
+        "type": "single_select",
+        "label": "Самый длинный streak",
+        "options": [
+          { "value": "0_3", "label": "0–3 дня" },
+          { "value": "4_14", "label": "4–14 дней" },
+          { "value": "15_30", "label": "15–30 дней" },
+          { "value": "30_plus", "label": "30+ дней" }
+        ],
+        "required": true
+      },
+      {
+        "id": "common_break_reasons",
+        "type": "multi_select",
+        "label": "Почему обычно срываешься",
+        "options": [
+          { "value": "busy", "label": "Нет времени" },
+          { "value": "forgot", "label": "Забываю" },
+          { "value": "motivation", "label": "Падает мотивация" },
+          { "value": "perfectionism", "label": "Всё или ничего" }
+        ],
+        "required": true
+      },
+      {
+        "id": "preferred_cue",
+        "type": "single_select",
+        "label": "Лучший триггер для привычки",
+        "options": [
+          { "value": "time", "label": "Время суток" },
+          { "value": "location", "label": "Место" },
+          { "value": "after_action", "label": "После другого действия" },
+          { "value": "reminder", "label": "Напоминание" }
+        ],
+        "required": true
+      },
+      {
+        "id": "recovery_style",
+        "type": "single_select",
+        "label": "Как возвращаешься после срыва",
+        "options": [
+          { "value": "restart_next_day", "label": "С завтрашнего дня" },
+          { "value": "mini_version", "label": "Упрощённая версия" },
+          { "value": "hard_to_restart", "label": "Трудно вернуться" }
+        ],
+        "required": true
+      },
+      {
+        "id": "habit_priority",
+        "type": "single_select",
+        "label": "Какую привычку хочешь укрепить",
+        "options": [
+          { "value": "learning", "label": "Регулярное обучение" },
+          { "value": "practice", "label": "Практика кода" },
+          { "value": "wellbeing", "label": "Забота о себе" }
+        ],
+        "required": true
+      },
+      {
+        "id": "accountability",
+        "type": "single_select",
+        "label": "Нужна ли внешняя ответственность",
+        "options": [
+          { "value": "solo", "label": "Справлюсь сам" },
+          { "value": "coach", "label": "Напоминания Coach" },
+          { "value": "peer", "label": "Партнёр / группа" }
+        ],
+        "required": true
+      },
+      {
+        "id": "habits_disclaimer",
+        "type": "boolean_ack",
+        "label": "Evolv не заменяет специалиста",
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "mind_habits_hint": "Habit experience: {{habit_experience}}. Break reasons: {{common_break_reasons}}. Recovery: {{recovery_style}}. Priority: {{habit_priority}}."
+  }
+}

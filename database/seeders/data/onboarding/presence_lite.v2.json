@@ -1,0 +1,74 @@
+{
+  "code": "presence_lite",
+  "version": "2.0.0",
+  "pillar": "presence",
+  "tier": "lite",
+  "title": "Живые сессии",
+  "description": "Формат общения с ментором или коучем",
+  "schema": {
+    "questions": [
+      {
+        "id": "session_formats",
+        "type": "multi_select",
+        "label": "Интересные форматы",
+        "options": [
+          { "value": "code_mentor", "label": "Ментор по коду" },
+          { "value": "career_coach", "label": "Карьерный коуч" },
+          { "value": "wellbeing_conversation", "label": "Wellbeing (не терапия)" }
+        ],
+        "required": true
+      },
+      {
+        "id": "communication_mode",
+        "type": "single_select",
+        "label": "Формат связи",
+        "options": [
+          { "value": "text_only", "label": "Текст" },
+          { "value": "voice_ok", "label": "Голос" },
+          { "value": "video_ok", "label": "Видео" }
+        ],
+        "required": true
+      },
+      {
+        "id": "session_language",
+        "type": "single_select",
+        "label": "Язык сессий",
+        "options": [
+          { "value": "ru", "label": "Русский" },
+          { "value": "en", "label": "English" }
+        ],
+        "required": true
+      },
+      {
+        "id": "session_frequency",
+        "type": "single_select",
+        "label": "Частота",
+        "options": [
+          { "value": "weekly", "label": "Раз в неделю" },
+          { "value": "on_demand", "label": "По запросу" }
+        ],
+        "required": true
+      },
+      {
+        "id": "comfort_sharing",
+        "type": "single_select",
+        "label": "Комфорт делиться трудностями",
+        "options": [
+          { "value": "low", "label": "Сдержанно" },
+          { "value": "medium", "label": "Умеренно" },
+          { "value": "high", "label": "Открыто" }
+        ],
+        "required": true
+      },
+      {
+        "id": "presence_disclaimer",
+        "type": "boolean_ack",
+        "label": "Не является психотерапией",
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "presence_coach_system": "Formats: {{session_formats}}. Mode: {{communication_mode}}. Language: {{session_language}}. Primary: {{primary_format}}."
+  }
+}

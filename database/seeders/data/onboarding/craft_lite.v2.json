@@ -1,0 +1,162 @@
+{
+  "code": "craft_lite",
+  "version": "2.0.0",
+  "pillar": "craft",
+  "tier": "lite",
+  "title": "Путь в программировании",
+  "description": "Опыт, цели, стиль обучения и ограничения",
+  "schema": {
+    "questions": [
+      {
+        "id": "experience_level",
+        "type": "single_select",
+        "label": "Текущий уровень",
+        "options": [
+          { "value": "absolute_beginner", "label": "С нуля" },
+          { "value": "beginner", "label": "Начинающий" },
+          { "value": "junior", "label": "Junior" },
+          { "value": "middle", "label": "Middle" },
+          { "value": "senior", "label": "Senior" }
+        ],
+        "required": true
+      },
+      {
+        "id": "years_coding",
+        "type": "single_select",
+        "label": "Сколько лет пишешь код?",
+        "options": [
+          { "value": "none", "label": "Почти не писал" },
+          { "value": "under_1", "label": "Меньше года" },
+          { "value": "1_2", "label": "1–2 года" },
+          { "value": "3_5", "label": "3–5 лет" },
+          { "value": "over_5", "label": "Больше 5 лет" }
+        ],
+        "required": true
+      },
+      {
+        "id": "current_stack",
+        "type": "multi_select",
+        "label": "Что уже используешь?",
+        "options": [
+          { "value": "none", "label": "Пока ничего" },
+          { "value": "php", "label": "PHP" },
+          { "value": "javascript", "label": "JavaScript" },
+          { "value": "python", "label": "Python" },
+          { "value": "sql", "label": "SQL" }
+        ],
+        "required": true
+      },
+      {
+        "id": "target_languages",
+        "type": "multi_select",
+        "label": "Что хочешь изучать?",
+        "options": [
+          { "value": "php", "label": "PHP" },
+          { "value": "javascript", "label": "JavaScript" },
+          { "value": "python", "label": "Python" },
+          { "value": "go", "label": "Go" },
+          { "value": "sql", "label": "SQL" }
+        ],
+        "required": true
+      },
+      {
+        "id": "target_topics",
+        "type": "multi_select",
+        "label": "Какие темы важнее?",
+        "options": [
+          { "value": "fundamentals", "label": "Основы" },
+          { "value": "algorithms", "label": "Алгоритмы" },
+          { "value": "web_backend", "label": "Backend" },
+          { "value": "web_frontend", "label": "Frontend" },
+          { "value": "databases", "label": "Базы данных" }
+        ],
+        "required": true
+      },
+      {
+        "id": "learning_goal",
+        "type": "single_select",
+        "label": "Главная цель",
+        "options": [
+          { "value": "first_job", "label": "Первая работа" },
+          { "value": "interview", "label": "Собеседования" },
+          { "value": "pet_project", "label": "Свой проект" },
+          { "value": "curiosity", "label": "Для себя" }
+        ],
+        "required": true
+      },
+      {
+        "id": "goal_deadline",
+        "type": "single_select",
+        "label": "Дедлайн",
+        "options": [
+          { "value": "none", "label": "Нет" },
+          { "value": "3_months", "label": "3 месяца" },
+          { "value": "6_months", "label": "Полгода" }
+        ],
+        "required": true
+      },
+      {
+        "id": "learning_style",
+        "type": "single_select",
+        "label": "Стиль обучения",
+        "options": [
+          { "value": "practice_first", "label": "Практика" },
+          { "value": "theory_first", "label": "Теория" },
+          { "value": "mixed", "label": "Смешанный" }
+        ],
+        "required": true
+      },
+      {
+        "id": "session_length",
+        "type": "single_select",
+        "label": "Длина сессии",
+        "options": [
+          { "value": "micro_15", "label": "15 мин" },
+          { "value": "standard_30", "label": "30 мин" },
+          { "value": "deep_60", "label": "60 мин" }
+        ],
+        "required": true
+      },
+      {
+        "id": "code_comfort",
+        "type": "single_select",
+        "label": "Комфорт с кодом",
+        "options": [
+          { "value": "never", "label": "Не пробовал" },
+          { "value": "tutorials_only", "label": "По туториалам" },
+          { "value": "small_scripts", "label": "Свои скрипты" }
+        ],
+        "required": true
+      },
+      {
+        "id": "biggest_blocker",
+        "type": "single_select",
+        "label": "Главный блокер",
+        "options": [
+          { "value": "time", "label": "Время" },
+          { "value": "motivation", "label": "Мотивация" },
+          { "value": "where_to_start", "label": "Не знаю с чего начать" },
+          { "value": "none", "label": "Нет" }
+        ],
+        "required": true
+      },
+      {
+        "id": "prefers_challenges",
+        "type": "single_select",
+        "label": "Нравятся челленджи?",
+        "options": [
+          { "value": "yes", "label": "Да" },
+          { "value": "no", "label": "Нет" },
+          { "value": "depends", "label": "Иногда" }
+        ],
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "coach_system": "Programming learner: {{experience_label}} ({{experience_level}}). Learning: {{target_languages}}. Topics: {{target_topics}}. Goal: {{learning_goal}}. Style: {{learning_style}}. Blocker: {{biggest_blocker}}.",
+    "craft_path_hint": "Suggest a path for {{difficulty_band}} level in {{target_languages}}, topics {{target_topics}}, priority {{path_priority}}.",
+    "practice_hint": "Sessions: {{session_length}}, challenges: {{prefers_challenges}}, comfort: {{code_comfort}}.",
+    "encouragement": "Address blocker '{{biggest_blocker}}' with {{coach_tone}} tone."
+  }
+}

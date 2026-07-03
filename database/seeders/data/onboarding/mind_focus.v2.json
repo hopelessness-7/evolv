@@ -1,0 +1,103 @@
+{
+  "code": "mind_focus",
+  "version": "2.0.0",
+  "pillar": "mind",
+  "tier": "extended",
+  "title": "Фокус и продуктивность",
+  "description": "Отвлечения, deep work и рабочие ритуалы",
+  "schema": {
+    "questions": [
+      {
+        "id": "distraction_sources",
+        "type": "multi_select",
+        "label": "Что чаще всего отвлекает?",
+        "options": [
+          { "value": "phone", "label": "Телефон / соцсети" },
+          { "value": "notifications", "label": "Уведомления" },
+          { "value": "multitasking", "label": "Многозадачность" },
+          { "value": "environment", "label": "Шум / окружение" },
+          { "value": "fatigue", "label": "Усталость" }
+        ],
+        "required": true
+      },
+      {
+        "id": "deep_work_experience",
+        "type": "single_select",
+        "label": "Опыт deep work / длинных сессий",
+        "options": [
+          { "value": "never", "label": "Почти никогда" },
+          { "value": "sometimes", "label": "Иногда" },
+          { "value": "regular", "label": "Регулярно" }
+        ],
+        "required": true
+      },
+      {
+        "id": "pomodoro_experience",
+        "type": "single_select",
+        "label": "Пробовал pomodoro / тайм-боксы?",
+        "options": [
+          { "value": "never", "label": "Нет" },
+          { "value": "tried", "label": "Пробовал" },
+          { "value": "uses", "label": "Использую" }
+        ],
+        "required": true
+      },
+      {
+        "id": "focus_session_length",
+        "type": "single_select",
+        "label": "Комфортная длина фокус-сессии",
+        "options": [
+          { "value": "15", "label": "15 мин" },
+          { "value": "25", "label": "25 мин" },
+          { "value": "45", "label": "45 мин" },
+          { "value": "60", "label": "60+ мин" }
+        ],
+        "required": true
+      },
+      {
+        "id": "best_focus_time",
+        "type": "single_select",
+        "label": "Когда фокус лучше всего",
+        "options": [
+          { "value": "morning", "label": "Утро" },
+          { "value": "afternoon", "label": "День" },
+          { "value": "evening", "label": "Вечер" },
+          { "value": "varies", "label": "По-разному" }
+        ],
+        "required": true
+      },
+      {
+        "id": "focus_blockers",
+        "type": "multi_select",
+        "label": "Главные блокеры фокуса",
+        "options": [
+          { "value": "procrastination", "label": "Прокрастинация" },
+          { "value": "anxiety", "label": "Тревога" },
+          { "value": "unclear_goals", "label": "Нечёткие цели" },
+          { "value": "interruptions", "label": "Прерывания" }
+        ],
+        "required": true
+      },
+      {
+        "id": "focus_goal",
+        "type": "single_select",
+        "label": "Чего хочешь от этого пакета",
+        "options": [
+          { "value": "study", "label": "Лучше учиться" },
+          { "value": "work", "label": "Продуктивнее на работе" },
+          { "value": "both", "label": "И то, и другое" }
+        ],
+        "required": true
+      },
+      {
+        "id": "focus_disclaimer",
+        "type": "boolean_ack",
+        "label": "Evolv не заменяет специалиста",
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "mind_focus_hint": "Distractions: {{distraction_sources}}. Deep work: {{deep_work_experience}}. Pomodoro: {{pomodoro_experience}}. Best focus time: {{best_focus_time}}."
+  }
+}

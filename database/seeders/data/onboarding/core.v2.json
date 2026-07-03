@@ -1,0 +1,111 @@
+{
+  "code": "core",
+  "version": "2.0.0",
+  "pillar": null,
+  "tier": "core",
+  "title": "Добро пожаловать в Evolv",
+  "description": "Базовый профиль: время, столпы развития и стиль Coach",
+  "schema": {
+    "questions": [
+      {
+        "id": "display_name",
+        "type": "text",
+        "label": "Как к тебе обращаться?",
+        "placeholder": "Алекс",
+        "max_length": 64,
+        "required": true
+      },
+      {
+        "id": "timezone",
+        "type": "timezone",
+        "label": "Часовой пояс",
+        "required": true
+      },
+      {
+        "id": "interface_language",
+        "type": "single_select",
+        "label": "Язык интерфейса и ответов Coach",
+        "options": [
+          { "value": "ru", "label": "Русский" },
+          { "value": "en", "label": "English" },
+          { "value": "both", "label": "Оба / Both" }
+        ],
+        "required": true
+      },
+      {
+        "id": "daily_minutes",
+        "type": "number",
+        "label": "Минут в день на развитие",
+        "min": 5,
+        "max": 480,
+        "required": true
+      },
+      {
+        "id": "weekly_days",
+        "type": "single_select",
+        "label": "Сколько дней в неделю реально заниматься?",
+        "options": [
+          { "value": "2_3", "label": "2–3 дня" },
+          { "value": "4_5", "label": "4–5 дней" },
+          { "value": "6_7", "label": "Почти каждый день" },
+          { "value": "irregular", "label": "Нерегулярно" }
+        ],
+        "required": true
+      },
+      {
+        "id": "best_time_of_day",
+        "type": "single_select",
+        "label": "Когда проще всего учиться?",
+        "options": [
+          { "value": "morning", "label": "Утро" },
+          { "value": "afternoon", "label": "День" },
+          { "value": "evening", "label": "Вечер" },
+          { "value": "night", "label": "Ночь" },
+          { "value": "flexible", "label": "По-разному" }
+        ],
+        "required": true
+      },
+      {
+        "id": "enabled_pillars",
+        "type": "multi_select",
+        "label": "Что хочешь развивать?",
+        "options": [
+          { "value": "craft", "label": "Программирование (Craft)" },
+          { "value": "mind", "label": "Фокус, привычки, wellbeing (Mind)" },
+          { "value": "presence", "label": "Живые сессии (Presence)" }
+        ],
+        "required": true
+      },
+      {
+        "id": "primary_motivation",
+        "type": "single_select",
+        "label": "Главный драйвер сейчас",
+        "options": [
+          { "value": "career_change", "label": "Смена карьеры / первая работа в IT" },
+          { "value": "skill_up", "label": "Прокачать навыки на текущей работе" },
+          { "value": "wellbeing", "label": "Баланс, энергия, устойчивость" },
+          { "value": "curiosity", "label": "Интерес и любопытство" },
+          { "value": "comeback", "label": "Вернуться после паузы" }
+        ],
+        "required": true
+      },
+      {
+        "id": "coach_tone",
+        "type": "single_select",
+        "label": "Какой тон Coach тебе ближе?",
+        "options": [
+          { "value": "supportive", "label": "Поддерживающий" },
+          { "value": "direct", "label": "Прямой и по делу" },
+          { "value": "playful", "label": "Лёгкий, с юмором" },
+          { "value": "academic", "label": "Структурный, академичный" }
+        ],
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "coach_system": "You are a personal growth coach for {{display_name}}. Respond in {{interface_language}}. Tone: {{coach_tone}}. Primary motivation: {{primary_motivation}}. Daily budget: {{daily_minutes}} minutes (~{{weekly_minutes_estimate}} min/week). Active pillars: {{enabled_pillars}}.",
+    "scheduling_hint": "Timezone: {{timezone}}. Best learning time: {{best_time_of_day}}. Weekly rhythm: {{weekly_days}} days per week.",
+    "user_context": "{{display_name}} wants to grow in {{enabled_pillars}}, motivated by {{primary_motivation}}, with {{daily_minutes}} min/day, prefers {{coach_tone}} coaching style."
+  }
+}

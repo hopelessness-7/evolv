@@ -1,0 +1,103 @@
+{
+  "entries": [
+    {
+      "node_slug": "php.intro",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# PHP introduction\n\nPHP is a server-side scripting language designed for the web. A typical script runs on the server and returns HTML to the browser.\n\n## Your first script\n\n```php\n<?php\necho \"Hello, Evolv!\";\n```\n\nThe `<?php` tag tells the interpreter where PHP code begins."
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\n$name = 'Alex';\necho \"Hi, {$name}!\";\n```",
+          "meta": { "language": "php" }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "How does a PHP script start?\n\n- A) `<script>`\n- B) `<?php`\n- C) `#php`",
+          "meta": { "answer": "B" }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- PHP runs on the server\n- Scripts start with `<?php`\n- `echo` outputs text"
+        },
+        {
+          "kind": "exercise",
+          "order": 5,
+          "body_md": "Print `Hello, Evolv!` to stdout.",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n// Print Hello, Evolv!\n",
+            "tests": [
+              {
+                "label": "greeting",
+                "stdin": "",
+                "expected_output": "Hello, Evolv!"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.variables",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Variables and types\n\nVariables store values. Names start with `$`.\n\n```php\n$count = 3;\n$price = 9.99;\n$label = 'starter';\n$active = true;\n```\n\nPHP is dynamically typed: the type is inferred from the value."
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Which declaration is valid?\n\n- A) `name = 'Alex'`\n- B) `$name = 'Alex'`\n- C) `var name = 'Alex'`",
+          "meta": { "answer": "B" }
+        },
+        {
+          "kind": "summary",
+          "order": 3,
+          "body_md": "- Use `$name` to declare variables\n- Common types: int, float, string, bool"
+        },
+        {
+          "kind": "exercise",
+          "order": 4,
+          "body_md": "Create a variable `$greeting` with value `Hi` and echo it.",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n// Assign $greeting and echo it\n",
+            "tests": [
+              {
+                "label": "echo greeting",
+                "stdin": "",
+                "expected_output": "Hi"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.arrays",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Arrays\n\nArrays hold ordered lists or key-value maps.\n\n```php\n$tags = ['php', 'web', 'backend'];\n$user = ['name' => 'Alex', 'level' => 1];\n```\n\nAccess elements with `$tags[0]` or `$user['name']`."
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "How do you read the first element of `$items`?\n\n- A) `$items(0)`\n- B) `$items[0]`\n- C) `$items->0`",
+          "meta": { "answer": "B" }
+        }
+      ]
+    }
+  ]
+}

@@ -19,15 +19,79 @@ erDiagram
         timestamps timestamps
     }
 
-    user_onboarding {
+    user_profiles {
+        bigint user_id PK_FK
+        string timezone
+        smallint daily_minutes
+        json enabled_pillars
+        json facets
+        timestamp core_completed_at
+        timestamp onboarding_completed_at
+        timestamps timestamps
+    }
+
+    onboarding_questionnaires {
+        bigint id PK
+        string code
+        string version
+        string pillar
+        string tier
+        string title
+        json schema
+        json prompt_templates
+        boolean is_current
+        timestamp published_at
+        timestamps timestamps
+    }
+
+    onboarding_sessions {
         bigint id PK
         bigint user_id FK
-        varchar goal_track
-        varchar experience_level
-        smallint daily_minutes
-        varchar style
+        bigint questionnaire_id FK
+        string questionnaire_code
+        string questionnaire_version
+        string status
         json answers
+        json interpreted
+        json composed_prompts
         timestamp completed_at
+        timestamps timestamps
+    }
+
+    onboarding_analytics_events {
+        bigint id PK
+        bigint user_id FK
+        bigint session_id FK
+        string event
+        json payload
+        timestamps timestamps
+    }
+
+    coach_daily_plans {
+        bigint id PK
+        bigint user_id FK
+        date plan_date
+        string mode
+        string source
+        json plan
+        timestamps timestamps
+    }
+
+    user_notifications {
+        bigint id PK
+        bigint user_id FK
+        string type
+        string title
+        text body
+        json data
+        timestamp read_at
+        timestamp emailed_at
+        timestamps timestamps
+    }
+
+    notification_preferences {
+        bigint user_id PK_FK
+        boolean email_enabled
         timestamps timestamps
     }
 
@@ -129,7 +193,14 @@ erDiagram
         timestamps timestamps
     }
 
-    users ||--o| user_onboarding : "fills"
+    users ||--o| user_profiles : has
+    users ||--o{ onboarding_sessions : has
+    users ||--o{ onboarding_analytics_events : generates
+    users ||--o{ coach_daily_plans : receives
+    users ||--o{ user_notifications : receives
+    users ||--o| notification_preferences : has
+    onboarding_questionnaires ||--o{ onboarding_sessions : defines
+    onboarding_sessions ||--o{ onboarding_analytics_events : logs
     users ||--o{ learning_plans : "owns"
     learning_plans ||--o{ learning_plan_steps : "contains"
     knowledge_nodes ||--o{ learning_plan_steps : "referenced by"
@@ -159,13 +230,28 @@ erDiagram
 
 | Группа | Таблицы | Модуль-владелец |
 |--------|---------|-----------------|
-| Идентификация | `users`, `roles`, `permissions`, ... | Identity |
-| Цели пользователя | `user_onboarding` | Onboarding |
+| Идентификация | `users`, `personal_access_tokens`, `roles`, `permissions`, ... | Auth |
+| Онбординг | `user_profiles`, `onboarding_questionnaires`, `onboarding_sessions`, `onboarding_analytics_events` | Onboarding |
+| Coach | `coach_daily_plans` | Coach |
+| Уведомления | `user_notifications`, `notification_preferences` | Notifications |
 | Граф знаний | `knowledge_nodes`, `knowledge_edges` | Curriculum |
 | Контент (канон + версии) | `content_versions`, `content_atoms` | Content |
 | Маршрут обучения | `learning_plans`, `learning_plan_steps` | LearningPath |
 | Прогресс и практика | `user_skills`, `attempts`, `srs_cards` | LearningPath / Practice |
 | AI-задачи | `ai_generation_jobs` | AI |
+
+### Онбординг (реализовано)
+
+- `user_profiles` — агрегированный профиль: timezone, daily_minutes, enabled_pillars, facets по опросникам
+- `onboarding_questionnaires` — версионированные опросники (seed JSON): `core`, `craft_lite`, `mind_lite`, `presence_lite`, `mind_*` extended
+- `onboarding_sessions` — сессии с partial save (`answers`), интерпретацией (`interpreted`) и промптами (`composed_prompts`)
+- `onboarding_analytics_events` — события воронки (status viewed, session started, …)
+
+`tier`: `core` | `lite` | `extended`. См. [onboarding.md](onboarding.md).
+
+### Coach (реализовано)
+
+`coach_daily_plans` — кэш плана на день: `mode` (simplified/personalized), `source` (llm/fallback), JSON `plan`. UNIQUE `(user_id, plan_date)`. См. [coach.md](coach.md).
 
 ### Граф знаний
 
@@ -255,8 +341,9 @@ erDiagram
 
 | Group | Tables | Owner module |
 |-------|--------|--------------|
-| Identity | `users`, permission tables | Identity |
-| User intent | `user_onboarding` | Onboarding |
+| Identity | `users`, `personal_access_tokens`, permission tables | Auth |
+| Onboarding | `user_profiles`, `onboarding_questionnaires`, `onboarding_sessions`, `onboarding_analytics_events` | Onboarding |
+| Coach | `coach_daily_plans` | Coach |
 | Knowledge graph | `knowledge_nodes`, `knowledge_edges` | Curriculum |
 | Content canon + versions | `content_versions`, `content_atoms` | Content |
 | Learning route | `learning_plans`, `learning_plan_steps` | LearningPath |

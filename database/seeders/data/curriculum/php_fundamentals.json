@@ -1,0 +1,103 @@
+{
+  "track": "php",
+  "nodes": [
+    {
+      "slug": "php.intro",
+      "title": "Введение в PHP",
+      "summary": "Что такое PHP, где используется, первая программа",
+      "status": "published",
+      "meta": { "difficulty": 1, "tags": ["fundamentals"], "estimated_minutes": 20 }
+    },
+    {
+      "slug": "php.variables",
+      "title": "Переменные и типы",
+      "summary": "Скалярные типы, приведение, var_dump",
+      "status": "published",
+      "meta": { "difficulty": 1, "tags": ["fundamentals"], "estimated_minutes": 25 }
+    },
+    {
+      "slug": "php.strings",
+      "title": "Строки",
+      "summary": "Конкатенация, heredoc, основные функции",
+      "status": "published",
+      "meta": { "difficulty": 1, "tags": ["fundamentals"], "estimated_minutes": 20 }
+    },
+    {
+      "slug": "php.operators",
+      "title": "Операторы",
+      "summary": "Арифметика, сравнение, логика, приоритет",
+      "status": "published",
+      "meta": { "difficulty": 1, "tags": ["fundamentals"], "estimated_minutes": 20 }
+    },
+    {
+      "slug": "php.arrays",
+      "title": "Массивы",
+      "summary": "Индексные и ассоциативные массивы, foreach",
+      "status": "published",
+      "meta": { "difficulty": 2, "tags": ["fundamentals"], "estimated_minutes": 30 }
+    },
+    {
+      "slug": "php.control-flow",
+      "title": "Управление потоком",
+      "summary": "if/else, switch, for, while, break/continue",
+      "status": "published",
+      "meta": { "difficulty": 2, "tags": ["fundamentals"], "estimated_minutes": 30 }
+    },
+    {
+      "slug": "php.functions",
+      "title": "Функции",
+      "summary": "Объявление, параметры, return, type hints",
+      "status": "published",
+      "meta": { "difficulty": 2, "tags": ["fundamentals"], "estimated_minutes": 35 }
+    },
+    {
+      "slug": "php.scope",
+      "title": "Область видимости",
+      "summary": "Локальные и глобальные переменные, static",
+      "status": "published",
+      "meta": { "difficulty": 2, "tags": ["fundamentals"], "estimated_minutes": 25 }
+    },
+    {
+      "slug": "php.forms",
+      "title": "Формы и GET/POST",
+      "summary": "Обработка ввода, $_GET, $_POST, базовая валидация",
+      "status": "published",
+      "meta": { "difficulty": 3, "tags": ["web_backend"], "estimated_minutes": 35 }
+    },
+    {
+      "slug": "php.include",
+      "title": "Подключение файлов",
+      "summary": "include, require, autoload на базовом уровне",
+      "status": "published",
+      "meta": { "difficulty": 2, "tags": ["fundamentals"], "estimated_minutes": 20 }
+    },
+    {
+      "slug": "php.errors",
+      "title": "Ошибки и отладка",
+      "summary": "Типы ошибок, try/catch введение, логирование",
+      "status": "published",
+      "meta": { "difficulty": 3, "tags": ["fundamentals"], "estimated_minutes": 25 }
+    },
+    {
+      "slug": "php.http-basics",
+      "title": "HTTP основы",
+      "summary": "Запрос, ответ, заголовки, статус-коды",
+      "status": "published",
+      "meta": { "difficulty": 2, "tags": ["web_backend"], "estimated_minutes": 25 }
+    }
+  ],
+  "edges": [
+    { "from": "php.intro", "to": "php.variables", "kind": "requires" },
+    { "from": "php.variables", "to": "php.strings", "kind": "requires" },
+    { "from": "php.variables", "to": "php.operators", "kind": "requires" },
+    { "from": "php.operators", "to": "php.arrays", "kind": "requires" },
+    { "from": "php.arrays", "to": "php.control-flow", "kind": "requires" },
+    { "from": "php.control-flow", "to": "php.functions", "kind": "requires" },
+    { "from": "php.functions", "to": "php.scope", "kind": "requires" },
+    { "from": "php.scope", "to": "php.include", "kind": "requires" },
+    { "from": "php.functions", "to": "php.forms", "kind": "requires" },
+    { "from": "php.forms", "to": "php.errors", "kind": "requires" },
+    { "from": "php.intro", "to": "php.http-basics", "kind": "related_to" },
+    { "from": "php.forms", "to": "php.http-basics", "kind": "related_to" }
+  ]
+}

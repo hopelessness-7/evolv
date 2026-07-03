@@ -1,0 +1,358 @@
+{
+  "info": {
+    "_postman_id": "evolv-api-v1",
+    "name": "Evolv API v1",
+    "description": "Локальная коллекция для Evolv (Laravel Sail).\n\n1. Импортируй коллекцию и environment `Evolv.local`.\n2. Выполни **Auth → Register** или **Login** — токен сохранится в `{{token}}`.\n3. Остальные запросы используют Bearer `{{token}}`.\n4. **Onboarding → Start session** сохранит `{{session_id}}` для save/complete.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "session_id",
+      "value": ""
+    },
+    {
+      "key": "questionnaire_code",
+      "value": "core"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Infra health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/health/infra"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (pm.response.code === 201 && json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex\",\n  \"email\": \"alex@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
+            },
+            "url": "{{base_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (pm.response.code === 200 && json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/me"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/onboarding/status"
+          }
+        },
+        {
+          "name": "List questionnaires",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/onboarding/questionnaires",
+              "host": ["{{base_url}}"],
+              "path": ["onboarding", "questionnaires"],
+              "query": [
+                {
+                  "key": "pillar",
+                  "value": "craft",
+                  "disabled": true
+                },
+                {
+                  "key": "tier",
+                  "value": "lite",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Show questionnaire",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/onboarding/questionnaires/{{questionnaire_code}}"
+          }
+        },
+        {
+          "name": "Start session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if ((pm.response.code === 200 || pm.response.code === 201) && json.id) {",
+                  "    pm.collectionVariables.set('session_id', String(json.id));",
+                  "    console.log('session_id saved:', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionnaire_code\": \"{{questionnaire_code}}\",\n  \"force_new\": false\n}"
+            },
+            "url": "{{base_url}}/onboarding/sessions"
+          }
+        },
+        {
+          "name": "Save answers (core)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": {\n    \"display_name\": \"Alex\",\n    \"timezone\": \"Europe/Moscow\",\n    \"interface_language\": \"ru\",\n    \"daily_minutes\": 45,\n    \"weekly_days\": \"4_5\",\n    \"best_time_of_day\": \"morning\",\n    \"enabled_pillars\": [\"craft\", \"mind\"],\n    \"primary_motivation\": \"skill_up\",\n    \"coach_tone\": \"direct\"\n  }\n}"
+            },
+            "url": "{{base_url}}/onboarding/sessions/{{session_id}}"
+          }
+        },
+        {
+          "name": "Save answers (craft_lite)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": {\n    \"experience_level\": \"junior\",\n    \"years_coding\": \"1_2\",\n    \"current_stack\": [\"php\"],\n    \"target_languages\": [\"php\", \"javascript\"],\n    \"target_topics\": [\"web_backend\", \"algorithms\"],\n    \"learning_goal\": \"interview\",\n    \"goal_deadline\": \"3_months\",\n    \"learning_style\": \"practice_first\",\n    \"session_length\": \"standard_30\",\n    \"code_comfort\": \"small_scripts\",\n    \"biggest_blocker\": \"time\",\n    \"prefers_challenges\": \"depends\"\n  }\n}"
+            },
+            "url": "{{base_url}}/onboarding/sessions/{{session_id}}"
+          }
+        },
+        {
+          "name": "Complete session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/onboarding/sessions/{{session_id}}/complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "LLM ping",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/ai/ping"
+          }
+        }
+      ]
+    }
+  ]
+}

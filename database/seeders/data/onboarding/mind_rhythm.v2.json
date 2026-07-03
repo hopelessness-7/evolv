@@ -1,0 +1,97 @@
+{
+  "code": "mind_rhythm",
+  "version": "2.0.0",
+  "pillar": "mind",
+  "tier": "extended",
+  "title": "Сон и энергия",
+  "description": "Хронотип, режим дня и восстановление",
+  "schema": {
+    "questions": [
+      {
+        "id": "chronotype",
+        "type": "single_select",
+        "label": "Когда чувствуешь себя бодрее",
+        "options": [
+          { "value": "lark", "label": "Жаворонок" },
+          { "value": "owl", "label": "Сова" },
+          { "value": "mixed", "label": "Середина / по-разному" }
+        ],
+        "required": true
+      },
+      {
+        "id": "sleep_hours",
+        "type": "single_select",
+        "label": "Сколько обычно спишь",
+        "options": [
+          { "value": "under_6", "label": "Меньше 6 ч" },
+          { "value": "6_7", "label": "6–7 ч" },
+          { "value": "7_8", "label": "7–8 ч" },
+          { "value": "over_8", "label": "Больше 8 ч" }
+        ],
+        "required": true
+      },
+      {
+        "id": "sleep_quality",
+        "type": "scale_1_5",
+        "label": "Качество сна (1-5)",
+        "min": 1,
+        "max": 5,
+        "required": true
+      },
+      {
+        "id": "energy_pattern",
+        "type": "single_select",
+        "label": "Провалы энергии",
+        "options": [
+          { "value": "morning", "label": "Утром" },
+          { "value": "afternoon", "label": "После обеда" },
+          { "value": "evening", "label": "Вечером" },
+          { "value": "stable", "label": "Относительно ровно" }
+        ],
+        "required": true
+      },
+      {
+        "id": "caffeine_use",
+        "type": "single_select",
+        "label": "Кофеин / стимуляторы",
+        "options": [
+          { "value": "none", "label": "Не использую" },
+          { "value": "morning_only", "label": "Только утром" },
+          { "value": "through_day", "label": "В течение дня" }
+        ],
+        "required": true
+      },
+      {
+        "id": "wind_down",
+        "type": "single_select",
+        "label": "Есть ли ритуал перед сном",
+        "options": [
+          { "value": "no", "label": "Нет" },
+          { "value": "sometimes", "label": "Иногда" },
+          { "value": "yes", "label": "Да, стабильно" }
+        ],
+        "required": true
+      },
+      {
+        "id": "rhythm_goal",
+        "type": "single_select",
+        "label": "Что хочешь улучшить",
+        "options": [
+          { "value": "sleep", "label": "Сон" },
+          { "value": "energy", "label": "Энергию днём" },
+          { "value": "schedule", "label": "Стабильный режим" }
+        ],
+        "required": true
+      },
+      {
+        "id": "rhythm_disclaimer",
+        "type": "boolean_ack",
+        "label": "Evolv не заменяет специалиста",
+        "required": true
+      }
+    ]
+  },
+  "prompt_templates": {
+    "mind_rhythm_hint": "Chronotype: {{chronotype}}. Sleep: {{sleep_hours}}, quality {{sleep_quality}}. Energy dips: {{energy_pattern}}."
+  }
+}
