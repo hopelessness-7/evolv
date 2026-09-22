@@ -5,6 +5,7 @@ namespace App\Modules\Learn\Services;
 use App\Models\User;
 use App\Modules\Coach\DTO\Input\GetDailyPlanData;
 use App\Modules\Coach\Services\CoachService;
+use App\Modules\Gamification\Contracts\GamificationReaderInterface;
 use App\Modules\Learn\DTO\Output\CurrentLessonData;
 use App\Modules\Learn\DTO\Output\TodayData;
 use App\Modules\LearningPath\DTO\Output\PathProgressData;
@@ -18,6 +19,7 @@ class LearnService
         private readonly OnboardingService $onboarding,
         private readonly CoachService $coach,
         private readonly LearningPathService $learningPath,
+        private readonly GamificationReaderInterface $gamification,
     ) {}
 
     public function getToday(User $user): TodayData
@@ -26,6 +28,7 @@ class LearnService
             onboarding: $this->onboarding->getStatus($user),
             dailyPlan: $this->coach->getDailyPlan($user, new GetDailyPlanData(date: null, refresh: false)),
             progress: $this->safeProgress($user),
+            gamification: $this->gamification->getProfile($user),
         );
     }
 

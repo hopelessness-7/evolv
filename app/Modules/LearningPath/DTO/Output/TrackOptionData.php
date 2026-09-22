@@ -35,6 +35,7 @@ final readonly class TrackOptionData implements RespondsAsArray
     {
         return match ($track) {
             Track::Php => 'PHP',
+            Track::Laravel => 'Laravel Middle',
             Track::Sql => 'SQL',
             Track::Javascript => 'JavaScript',
             Track::Python => 'Python',

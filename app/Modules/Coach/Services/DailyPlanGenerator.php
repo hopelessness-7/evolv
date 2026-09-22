@@ -11,6 +11,7 @@ use App\Modules\Coach\DTO\Output\DailyPlanData;
 use App\Modules\Coach\Enums\PlanMode;
 use App\Modules\Coach\Enums\PlanSource;
 use App\Modules\Onboarding\DTO\Output\OnboardingCoachContextData;
+use App\Modules\Shared\Support\InterfaceLanguage;
 
 class DailyPlanGenerator
 {
@@ -49,15 +50,21 @@ class DailyPlanGenerator
      */
     private function buildMessages(string $date, OnboardingCoachContextData $context): array
     {
+        $lang = InterfaceLanguage::fromProfileSummary($context->profileSummary);
+        $langName = InterfaceLanguage::displayName($lang);
         $mode = $context->personalizedPlanEligible ? PlanMode::Personalized->value : PlanMode::Simplified->value;
         $profileJson = json_encode($context->profileSummary ?? [], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $pendingJson = json_encode($context->pendingQuestionnaires, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $languageRule = InterfaceLanguage::llmPlanLanguageRule($lang);
 
-        $system = $context->coachSystemPrompt
+        $baseSystem = $context->coachSystemPrompt
             ?? 'You are Evolv Coach. Create concise, actionable daily learning plans.';
+
+        $system = $baseSystem."\n\n{$languageRule}";
 
         $user = <<<PROMPT
 Generate a daily learning plan for date {$date} in mode "{$mode}".
+Output language for all user-visible strings: {$langName} (code: {$lang}).
 
 User profile (JSON):
 {$profileJson}
@@ -70,17 +77,27 @@ Return JSON only with this shape:
   "date": "{$date}",
   "mode": "{$mode}",
   "total_minutes": <int>,
-  "greeting": "<string>",
+  "greeting": "<string in {$langName}>",
   "steps": [
     {
       "type": "onboarding|lesson|practice|quiz_review|mind|reflection|explore",
-      "title": "<string>",
-      "description": "<string>",
+      "title": "<string in {$langName}>",
+      "description": "<string in {$langName}>",
       "minutes": <int>,
       "pillar": "craft|mind|presence|null",
       "questionnaire_code": "<optional string>",
       "node_id": <optional int>,
-      "node_slug": "<optional string>"
+      "node_slug": "<optional string>",
+      "prompts": ["<optional short reflection questions in {$langName}>"],
+      "tools": [
+        {
+          "type": "notebook|self_check|open_lesson|open_practice",
+          "label": "<string in {$langName}>",
+          "node_slug": "<optional>",
+          "kind": "<optional reflection|note|question>",
+          "checklist": ["<optional strings for self_check>"]
+        }
+      ]
     }
   ],
   "reminders": [
@@ -88,16 +105,20 @@ Return JSON only with this shape:
       "type": "onboarding_incomplete",
       "questionnaire_code": "<string>",
       "required": <bool>,
-      "message": "<string>"
+      "message": "<string in {$langName}>"
     }
   ]
 }
 
 Rules:
+- {$languageRule}
 - Sum of step minutes must not exceed total_minutes.
 - In simplified mode prioritize onboarding completion.
 - In personalized mode balance enabled pillars; prefer practice when a coding exercise exists for the current node, otherwise quiz_review.
 - Keep steps practical for a self-paced learning app.
+- Keep node titles (if taken from profile/path) as-is; wrap them in a {$langName} phrase if needed.
+- For lesson/practice/reflection steps always include prompts (2-3) and tools (at least notebook).
+- Reflection must include a notebook tool and preferably a self_check tool with a short checklist.
 PROMPT;
 
         return [

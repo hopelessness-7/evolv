@@ -40,6 +40,7 @@
         "options": [
           { "value": "none", "label": "Пока ничего" },
           { "value": "php", "label": "PHP" },
+          { "value": "laravel", "label": "Laravel" },
           { "value": "javascript", "label": "JavaScript" },
           { "value": "python", "label": "Python" },
           { "value": "sql", "label": "SQL" }
@@ -52,6 +53,7 @@
         "label": "Что хочешь изучать?",
         "options": [
           { "value": "php", "label": "PHP" },
+          { "value": "laravel", "label": "Laravel (Middle−)" },
           { "value": "javascript", "label": "JavaScript" },
           { "value": "python", "label": "Python" },
           { "value": "go", "label": "Go" },
@@ -154,7 +156,7 @@
     ]
   },
   "prompt_templates": {
-    "coach_system": "Programming learner: {{experience_label}} ({{experience_level}}). Learning: {{target_languages}}. Topics: {{target_topics}}. Goal: {{learning_goal}}. Style: {{learning_style}}. Blocker: {{biggest_blocker}}.",
+    "coach_system": "Programming learner profile (keep coach replies in the learner interface language). Experience: {{experience_label}} ({{experience_level}}). Learning: {{target_languages}}. Topics: {{target_topics}}. Goal: {{learning_goal}}. Style: {{learning_style}}. Blocker: {{biggest_blocker}}.",
     "craft_path_hint": "Suggest a path for {{difficulty_band}} level in {{target_languages}}, topics {{target_topics}}, priority {{path_priority}}.",
     "practice_hint": "Sessions: {{session_length}}, challenges: {{prefers_challenges}}, comfort: {{code_comfort}}.",
     "encouragement": "Address blocker '{{biggest_blocker}}' with {{coach_tone}} tone."

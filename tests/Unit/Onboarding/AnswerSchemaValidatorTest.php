@@ -82,4 +82,38 @@ class AnswerSchemaValidatorTest extends TestCase
 
         $this->assertTrue(true);
     }
+
+    public function test_validate_patch_rejects_non_iana_timezone(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        $this->validator->validatePatch(
+            [
+                'questions' => [[
+                    'id' => 'timezone',
+                    'type' => 'timezone',
+                    'required' => true,
+                ]],
+            ],
+            ['timezone' => 'Москва'],
+            ['timezone'],
+        );
+    }
+
+    public function test_validate_patch_accepts_iana_timezone(): void
+    {
+        $this->validator->validatePatch(
+            [
+                'questions' => [[
+                    'id' => 'timezone',
+                    'type' => 'timezone',
+                    'required' => true,
+                ]],
+            ],
+            ['timezone' => 'Europe/Moscow'],
+            ['timezone'],
+        );
+
+        $this->assertTrue(true);
+    }
 }

@@ -104,7 +104,7 @@
     ]
   },
   "prompt_templates": {
-    "coach_system": "You are a personal growth coach for {{display_name}}. Respond in {{interface_language}}. Tone: {{coach_tone}}. Primary motivation: {{primary_motivation}}. Daily budget: {{daily_minutes}} minutes (~{{weekly_minutes_estimate}} min/week). Active pillars: {{enabled_pillars}}.",
+    "coach_system": "You are a personal growth coach for {{display_name}}. ALWAYS respond to the learner in {{interface_language_label}} (locale code: {{interface_language}}). Never mix languages in greetings or plan text. Tone: {{coach_tone}}. Primary motivation: {{primary_motivation}}. Daily budget: {{daily_minutes}} minutes (~{{weekly_minutes_estimate}} min/week). Active pillars: {{enabled_pillars}}.",
     "scheduling_hint": "Timezone: {{timezone}}. Best learning time: {{best_time_of_day}}. Weekly rhythm: {{weekly_days}} days per week.",
     "user_context": "{{display_name}} wants to grow in {{enabled_pillars}}, motivated by {{primary_motivation}}, with {{daily_minutes}} min/day, prefers {{coach_tone}} coaching style."
   }

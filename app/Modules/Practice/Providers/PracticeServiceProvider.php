@@ -7,6 +7,8 @@ use App\Modules\Practice\Contracts\CodeExecutionDriverInterface;
 use App\Modules\Practice\Contracts\PracticeExerciseReaderInterface;
 use App\Modules\Practice\Contracts\UserSkillRepositoryInterface;
 use App\Modules\Practice\Drivers\Judge0Driver;
+use App\Modules\Practice\Drivers\LocalPhpDriver;
+use App\Modules\Practice\Drivers\ResilientCodeExecutionDriver;
 use App\Modules\Practice\Repositories\AttemptRepository;
 use App\Modules\Practice\Repositories\UserSkillRepository;
 use App\Modules\Practice\Services\ExerciseResolver;
@@ -19,7 +21,10 @@ class PracticeServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(CodeExecutionDriverInterface::class, Judge0Driver::class);
+        $this->app->singleton(Judge0Driver::class);
+        $this->app->singleton(LocalPhpDriver::class);
+        $this->app->singleton(ResilientCodeExecutionDriver::class);
+        $this->app->singleton(CodeExecutionDriverInterface::class, ResilientCodeExecutionDriver::class);
         $this->app->singleton(AttemptRepositoryInterface::class, AttemptRepository::class);
         $this->app->singleton(UserSkillRepositoryInterface::class, UserSkillRepository::class);
         $this->app->singleton(PracticeExerciseReaderInterface::class, ExerciseResolver::class);

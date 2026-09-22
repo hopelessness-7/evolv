@@ -8,6 +8,7 @@ final readonly class ExerciseData implements RespondsAsArray
 {
     /**
      * @param  list<ExerciseTestData>  $tests
+     * @param  list<string>  $hints
      */
     public function __construct(
         public int $atomId,
@@ -17,6 +18,10 @@ final readonly class ExerciseData implements RespondsAsArray
         public string $starterCode,
         public array $tests,
         public ?string $title = null,
+        public string $prompt = '',
+        public array $hints = [],
+        public ?string $summary = null,
+        public ?string $criterion = null,
     ) {}
 
     public function languageId(): int
@@ -48,6 +53,10 @@ final readonly class ExerciseData implements RespondsAsArray
             'node_id' => $this->nodeId,
             'node_slug' => $this->nodeSlug,
             'title' => $this->title,
+            'summary' => $this->summary,
+            'criterion' => $this->criterion,
+            'prompt' => $this->prompt,
+            'hints' => array_values($this->hints),
             'language' => $this->language,
             'starter_code' => $this->starterCode,
             'tests' => array_map(

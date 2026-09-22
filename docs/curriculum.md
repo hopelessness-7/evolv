@@ -24,7 +24,9 @@ GET /api/v1/curriculum/entry-nodes
 
 ### Seed
 
-`database/seeders/data/curriculum/php_fundamentals.json` — 12 узлов PHP.
+`database/seeders/data/curriculum/php_fundamentals.json` — полный курс PHP 8+ (~28 узлов, zero→pro).
+
+`database/seeders/data/curriculum/laravel_middle.json` — трек Laravel Middle (дыры рынка).
 
 ---
 

@@ -44,9 +44,15 @@ class PracticeTest extends TestCase
             ->assertJsonPath('language', 'php')
             ->assertJsonStructure([
                 'atom_id',
+                'title',
+                'summary',
+                'criterion',
+                'prompt',
+                'hints',
                 'starter_code',
                 'tests' => [['label', 'stdin']],
-            ]);
+            ])
+            ->assertJsonPath('prompt', 'Выведите ровно `Hello, Evolv!` (без перевода строки в конце).');
     }
 
     public function test_submit_accepted_attempt_updates_mastery(): void

@@ -51,7 +51,7 @@ class EntryNodeSelector
 
     public function entrySlugForTrack(Track $track, string $difficultyBand): string
     {
-        return $track->value.'.'.$this->entrySuffix($difficultyBand);
+        return $track->entrySlug($difficultyBand);
     }
 
     private function difficultyBandForUser(User $user): string
@@ -60,13 +60,5 @@ class EntryNodeSelector
         $craftFacets = $context->profileSummary['facets']['craft_lite'] ?? [];
 
         return (string) ($craftFacets['difficulty_band'] ?? 'beginner');
-    }
-
-    private function entrySuffix(string $difficultyBand): string
-    {
-        return match ($difficultyBand) {
-            'advanced' => 'overview',
-            default => 'intro',
-        };
     }
 }

@@ -66,17 +66,37 @@ class SessionRepository implements SessionRepositoryInterface
             ->where('user_id', $user->id)
             ->where('status', SessionStatus::Completed)
             ->whereNotNull('composed_prompts')
-            ->orderByDesc('completed_at')
+            ->orderBy('completed_at')
+            ->orderBy('id')
             ->get();
 
-        foreach ($sessions as $session) {
-            $prompt = $session->composed_prompts['prompts']['coach_system'] ?? null;
+        $parts = [];
 
-            if (is_string($prompt) && $prompt !== '') {
-                return $prompt;
+        foreach ($sessions as $session) {
+            $prompts = $session->composed_prompts['prompts'] ?? null;
+
+            if (! is_array($prompts)) {
+                continue;
+            }
+
+            foreach ($prompts as $key => $prompt) {
+                if (! is_string($key) || ! is_string($prompt) || $prompt === '') {
+                    continue;
+                }
+
+                // Keep every coach-related fragment (core language + pillar context).
+                if (! str_contains($key, 'coach')) {
+                    continue;
+                }
+
+                $parts[] = $prompt;
             }
         }
 
-        return null;
+        if ($parts === []) {
+            return null;
+        }
+
+        return implode("\n\n", array_values(array_unique($parts)));
     }
 }

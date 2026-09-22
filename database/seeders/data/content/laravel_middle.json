@@ -1,0 +1,576 @@
+{
+  "entries": [
+    {
+      "node_slug": "laravel.n1",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Eloquent N+1\n\n**Критерий «узел закрыт»:** найти N+1 в чужом коде и починить **2 кейса** (`with()` + `loadMissing()` / `load()`).\n\n## Симптом\n\nОдин запрос за родителями + **ещё один запрос на каждую** связанную запись.\n\n```php\n$users = User::query()->get(); // 1 query\n\nforeach ($users as $user) {\n    echo $user->posts->count(); // +1 query PER user → N+1\n}\n```\n\nПри 50 пользователях ≈ **51** запрос вместо **2**.\n\n## Лечение\n\n| Когда | Метод |\n|-------|--------|\n| Знаешь связь до выборки | `User::with('posts')->get()` |\n| Коллекция уже в руках | `$users->load('posts')` / `loadMissing('posts')` |\n| Вложенность | `with(['posts.comments'])` |\n\n```php\n$users = User::query()\n    ->with('posts')\n    ->get(); // users + posts = 2 queries\n\nforeach ($users as $user) {\n    echo $user->posts->count(); // без новых SQL\n}\n```\n\n## Как поймать на собесе и в проде\n\n1. **Laravel Debugbar / Telescope** — вкладка Queries, ищешь повтор одинаковых `where user_id = ?`.\n2. **Устно:** «цикл по `$model->relation` без eager load = классический N+1».\n3. В коде Evolv смотри list endpoints с relation access (plan steps + `node`, notifications, и т.д.).\n\n## Типовые отмазки интервьюера\n\n- «Но у меня всего 3 записи» — N+1 масштабируется; Middle ждут привычку, не микрооптимизацию.\n- `withCount('posts')` — если нужен только счётчик, не грузи всю коллекцию."
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n// Было (N+1)\n$plans = LearningPlan::query()->get();\nforeach ($plans as $plan) {\n    $plan->steps->count();\n}\n\n// Стало\n$plans = LearningPlan::query()\n    ->with('steps')\n    ->get();\n```\n\nВ Eloquent eager load собирает ключи родителей и делает `WHERE IN (...)` одним запросом.",
+          "meta": {
+            "language": "php",
+            "trace_hint": "Illuminate\\Database\\Eloquent\\Builder::eagerLoadRelations"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "У вас уже есть `$users = User::all();`. Как подгрузить `posts` **без** нового `User::query()`?\n\n- A) `User::with('posts')->get()`\n- B) `$users->load('posts')`\n- C) `DB::table('posts')->get()`",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Сколько SQL будет при `User::with('posts')->get()` и 10 пользователях (у каждого есть посты)?\n\n- A) 11\n- B) 10\n- C) 2",
+          "meta": {
+            "answer": "C"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- N+1 = 1 + N запросов при ленивой загрузке в цикле\n- `with()` до get; `load` / `loadMissing` на готовой коллекции\n- Детект: Telescope/Debugbar → одинаковые relation queries\n- **Закрыт:** 2 починки в реальном коде + объяснение устно"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Симулятор N+1 (plain PHP, как Judge0).\n\nДопиши `eagerLoadPosts()`: **один** запрос за всеми постами + разложить по `user_id`. В конце скрипт печатает число запросов — должно быть **2** (users + posts).",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n\n$GLOBALS['queries'] = 0;\n\nfunction db_select(string $sql): array\n{\n    $GLOBALS['queries']++;\n\n    if (str_contains($sql, 'FROM users')) {\n        return [\n            ['id' => 1, 'name' => 'Ann'],\n            ['id' => 2, 'name' => 'Bob'],\n            ['id' => 3, 'name' => 'Cid'],\n        ];\n    }\n\n    if (str_contains($sql, 'FROM posts WHERE user_id IN')) {\n        return [\n            ['id' => 10, 'user_id' => 1, 'title' => 'a'],\n            ['id' => 11, 'user_id' => 1, 'title' => 'b'],\n            ['id' => 12, 'user_id' => 2, 'title' => 'c'],\n            ['id' => 13, 'user_id' => 3, 'title' => 'd'],\n        ];\n    }\n\n    if (preg_match('/user_id = (\\d+)/', $sql, $m)) {\n        $uid = (int) $m[1];\n\n        return array_values(array_filter(\n            [\n                ['id' => 10, 'user_id' => 1, 'title' => 'a'],\n                ['id' => 11, 'user_id' => 1, 'title' => 'b'],\n                ['id' => 12, 'user_id' => 2, 'title' => 'c'],\n                ['id' => 13, 'user_id' => 3, 'title' => 'd'],\n            ],\n            fn (array $p) => $p['user_id'] === $uid,\n        ));\n    }\n\n    return [];\n}\n\nfunction loadUsers(): array\n{\n    return db_select('SELECT * FROM users');\n}\n\n/**\n * Fix N+1: load all posts in ONE query, attach to users.\n * Do NOT call db_select per user.\n *\n * @param  list<array{id:int,name:string}>  $users\n * @return list<array{id:int,name:string,posts:list<array>}>\n */\nfunction eagerLoadPosts(array $users): array\n{\n    // TODO: use WHERE user_id IN (...), group by user_id\n    foreach ($users as &$user) {\n        $user['posts'] = db_select('SELECT * FROM posts WHERE user_id = '.$user['id']);\n    }\n\n    return $users;\n}\n\n$users = eagerLoadPosts(loadUsers());\necho $GLOBALS['queries'];\n",
+            "tests": [
+              {
+                "label": "query count is 2",
+                "stdin": "",
+                "expected_output": "2"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.sql-explain",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# SQL: составные индексы, EXPLAIN, WHERE vs HAVING\n\n**Критерий «узел закрыт»:** показать EXPLAIN до/после индекса и объяснить план; не путать WHERE и HAVING.\n\n## Составной индекс\n\nПорядок колонок = правило **слева направо**.\n\n```sql\nCREATE INDEX orders_user_created_idx\n  ON orders (user_id, created_at);\n```\n\nХорошо покрывает:\n\n- `WHERE user_id = ?`\n- `WHERE user_id = ? AND created_at > ?`\n- `WHERE user_id = ? ORDER BY created_at`\n\nПлохо / не использует ведущую колонку:\n\n- `WHERE created_at > ?` (без `user_id`)\n\nВ Laravel-миграции:\n\n```php\n$table->index(['user_id', 'created_at']);\n```\n\n## EXPLAIN (минимум для собеса)\n\n```sql\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 5 AND created_at > '2026-01-01';\n```\n\nСмотри:\n\n| Поле (MySQL) | Зачем |\n|--------------|--------|\n| `type` | `ref`/`range` лучше, чем `ALL` (full scan) |\n| `key` | какой индекс взяли |\n| `rows` | оценка просмотренных строк |\n| `Extra` | `Using filesort` / `Using temporary` — красные флаги |\n\nИнтервью-фраза: «до индекса type=ALL и rows≈таблица; после — type=ref, key=наш индекс, rows резко меньше».\n\n## WHERE vs HAVING\n\n| | WHERE | HAVING |\n|--|-------|--------|\n| Когда | **до** группировки | **после** `GROUP BY` |\n| На чём | строки таблицы | агрегаты (`COUNT`, `SUM`) |\n\n```sql\n-- фильтр по колонке строки → WHERE\nSELECT user_id, COUNT(*) AS c\nFROM orders\nWHERE status = 'paid'\nGROUP BY user_id;\n\n-- фильтр по агрегату → HAVING\nSELECT user_id, COUNT(*) AS c\nFROM orders\nGROUP BY user_id\nHAVING COUNT(*) > 10;\n```\n\nОшибка Junior: `WHERE COUNT(*) > 10` — СУБД отвергнет (или смысл сломается)."
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\nSchema::table('orders', function (Blueprint $table) {\n    $table->index(['user_id', 'created_at'], 'orders_user_created_idx');\n});\n```\n\nПроверка в MySQL:\n\n```sql\nEXPLAIN SELECT id FROM orders\nWHERE user_id = 1 AND created_at >= '2026-01-01'\nORDER BY created_at;\n-- key: orders_user_created_idx\n```",
+          "meta": {
+            "language": "php",
+            "trace_hint": "Illuminate\\Database\\Schema\\Blueprint::index"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Индекс `(user_id, created_at)`. Какой запрос **скорее всего не** использует его эффективно?\n\n- A) `WHERE user_id = 1`\n- B) `WHERE user_id = 1 AND created_at > '2026-01-01'`\n- C) `WHERE created_at > '2026-01-01'`",
+          "meta": {
+            "answer": "C"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Нужно оставить только пользователей с `COUNT(orders) > 5`. Куда условие?\n\n- A) WHERE\n- B) HAVING\n- C) ORDER BY",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Составной индекс: ведущая колонка слева обязательна для match\n- EXPLAIN: `type`/`key`/`rows`/`Extra`\n- WHERE = строки, HAVING = агрегаты\n- **Закрыт:** устно разобрать 1 план + верный индекс под фильтр"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Запросы к `orders` почти всегда: `WHERE user_id = ? AND created_at >= ?`.\n\nНапечатай **одну строку** DDL составного индекса (точное имя и колонки как в тесте).",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n// Print exactly:\n// CREATE INDEX orders_user_created_idx ON orders (user_id, created_at);\n\n",
+            "tests": [
+              {
+                "label": "composite index ddl",
+                "stdin": "",
+                "expected_output": "CREATE INDEX orders_user_created_idx ON orders (user_id, created_at);"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.container",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Service Container / Providers\n\n**Критерий:** объяснить bind vs singleton и нарисовать resolve; уметь зарегистрировать bind в Provider.\n\n## Зачем контейнер\n\nLaravel сам собирает зависимости контроллеров/сервисов (автоwiring). Ты описываешь **как** создать объект — фреймворк решает **когда**.\n\n## bind vs singleton\n\n| | `bind` | `singleton` |\n|--|--------|-------------|\n| Сколько инстансов | новый на каждый `resolve` | один на жизнь контейнера |\n| Когда | stateless сервисы, разные состояния | логгер, конфиг-клиенты, routers |\n\n```php\n$this->app->bind(PaymentGateway::class, StripeGateway::class);\n$this->app->singleton(ExchangeRateClient::class, fn ($app) => new ExchangeRateClient(config('services.rates')));\n```\n\n## Providers\n\n- `register()` — только bindings (ещё не все провайдеры загружены)\n- `boot()` — можно использовать другие сервисы, Event::listen, Gate, routes\n\nВ Evolv модули регистрируются через `ModulesServiceProvider` → каждый `*ServiceProvider`.\n\n## Собес-фразы\n\n- «Interface в конструкторе → контейнер резолвит конкретную реализацию из bind»\n- «Singleton не равен static: scoped к контейнеру запроса/приложения»\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n// app/Modules/Practice/Providers/PracticeServiceProvider.php\n$this->app->bind(CodeExecutionDriverInterface::class, Judge0Driver::class);\n$this->app->bind(PracticeService::class);\n```\n\nTrace: `Illuminate\\\\Container\\\\Container::resolve` → `build` → reflection конструктора.",
+          "meta": {
+            "language": "php",
+            "trace_hint": "Illuminate\\Container\\Container::resolve"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Нужен один общий HTTP-клиент к внешнему API на весь request lifecycle. Что выбрать?\n\n- A) `bind`\n- B) `singleton`\n- C) `instance` обязательно",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Где обычно регистрируют bind интерфейса к реализации?\n\n- A) В контроллере `__construct`\n- B) В `ServiceProvider::register()`\n- C) В Blade-шаблоне",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- bind = новый instance; singleton = один\n- register = bindings; boot = после полной загрузки\n- **Закрыт:** устный diff + свой bind в demo-провайдере"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Напечатай слово `singleton` если сервис должен быть один на контейнер, иначе `bind`.",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n// Scenario: shared Logger for the whole app container lifetime.\n// Print exactly: singleton   OR   bind\n\n$scenario = 'shared_logger';\n\nif ($scenario === 'shared_logger') {\n    // TODO: echo the right word\n    echo '';\n}\n",
+            "tests": [
+              {
+                "label": "container word",
+                "stdin": "",
+                "expected_output": "singleton"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.lifecycle",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# HTTP lifecycle\n\n**Критерий:** устно пройти путь HTTP-запроса с ключевыми классами Laravel.\n\n## Пазл (синхронный ряд)\n\n1. **`public/index.php`** — точка входа, создаёт application\n2. **HTTP Kernel** (`Illuminate\\\\Foundation\\\\Http\\\\Kernel`) — pipeline\n3. **Global middleware** — MaintainMode, TrimStrings, …\n4. **Router** — матчит URI → route → controller action\n5. **Route middleware** — `auth:sanctum`, throttle, …\n6. **Controller / invokable** — тонкий слой, дергает сервис\n7. **FormRequest** (если есть) — валидация до метода контроллера\n8. **Response** — JSON/HTML, after middleware на обратном пути\n\n```\nHTTP → Kernel → MW → Router → FormReq → Ctrl → Service → Eloquent → Response\n```\n\n## Что говорить на собесе\n\n«Запрос входит в index.php, Kernel прогоняет middleware pipeline, Router находит action, контейнер инжектит зависимости контроллера, ответ возвращается через тот же pipeline».\n\nAsync-ряд (не этот узел): Event → Job → Queue → failed_jobs.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n// public/index.php (упрощённо)\n$app = require_once __DIR__.'/../bootstrap/app.php';\n$kernel = $app->make(Illuminate\\\\Contracts\\\\Http\\\\Kernel::class);\n$response = $kernel->handle(\n    $request = Illuminate\\\\Http\\\\Request::capture()\n)->send();\n$kernel->terminate($request, $response);\n```",
+          "meta": {
+            "language": "php",
+            "trace_hint": "Illuminate\\Foundation\\Http\\Kernel::handle"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Где в типичном Laravel API выполняется FormRequest-валидация относительно метода контроллера?\n\n- A) После return JSON\n- B) До вызова метода контроллера (pipeline/router)\n- C) Только в Observer модели",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Что делает HTTP Kernel в двух словах?\n\n- A) Только Eloquent save\n- B) Прогоняет request через middleware pipeline и отдаёт в router\n- C) Только запускает queue worker",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- index.php → Kernel → MW → Router → Ctrl → Response\n- FormRequest — до action\n- **Закрыт:** устный walkthrough без шпаргалки"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Напечатай порядок коротких токенов через `>` без пробелов: `http>kernel>mw>router>ctrl>resp`",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n// Print the sync request puzzle tokens joined by >\necho '';\n",
+            "tests": [
+              {
+                "label": "pipeline order",
+                "stdin": "",
+                "expected_output": "http>kernel>mw>router>ctrl>resp"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.php8-speech",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# PHP 8 speech (для собеса)\n\n**Критерий:** 60 секунд на каждый пункт — readonly, enum, `===` — с мини-примером.\n\n## readonly\n\nСвойство/класс только для чтения после инициализации в конструкторе. Защита от случайной мутации DTO.\n\n```php\nfinal readonly class SubmitAttemptData\n{\n    public function __construct(\n        public int $atomId,\n        public string $code,\n    ) {}\n}\n```\n\nФраза: «Readonly DTO — иммутабельный вход use-case, проще рассуждать о состоянии».\n\n## enum (backed)\n\n```php\nenum AttemptVerdict: string\n{\n    case Accepted = 'accepted';\n    case WrongAnswer = 'wrong_answer';\n}\n```\n\nФраза: «Строковые статусы в БД → backed enum в PHP, autocomplete и исчерпывающий match».\n\n## === vs ==\n\n- `==` — с приведением типов (`0 == \"0\"` → true)\n- `===` — значение **и** тип\n\nФраза: «В API/валидации всегда `===`, иначе `\"0\"` и `0` становятся сюрпризом».\n\n## Бонус: typed properties / return types\n\nУже норма в L10–13. На собесе: «Типы в сигнатурах — контракт, не опция».\n"
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Что вернёт `0 == \"0\"` и `0 === \"0\"`?\n\n- A) true и true\n- B) true и false\n- C) false и false",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Зачем backed enum для статуса заявки в API?\n\n- A) Чтобы ускорить Redis\n- B) Фиксированный набор значений + проверка на уровне языка\n- C) Замена миграций",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- readonly = иммутабельный DTO\n- enum = закрытый набор статусов\n- === без type juggling\n- **Закрыт:** 3 устных спича по 60с"
+        },
+        {
+          "kind": "exercise",
+          "order": 5,
+          "body_md": "Напечатай `strict` если для сравнения id из JSON и int из БД нужен строгий оператор, иначе `loose`.",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n// JSON gives string \"42\", DB gives int 42. Prefer safe equality name:\n// Print: strict   OR   loose\necho '';\n",
+            "tests": [
+              {
+                "label": "equality speech",
+                "stdin": "",
+                "expected_output": "strict"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.validation",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Request / Validation\n\n**Критерий:** свой FormRequest + понимание 422/failedValidation для API.\n\n## FormRequest\n\n```php\nclass SubmitAttemptRequest extends FormRequest\n{\n    public function rules(): array\n    {\n        return [\n            'code' => ['required', 'string', 'max:20000'],\n            'atom_id' => ['required', 'integer'],\n        ];\n    }\n}\n```\n\nКонтроллер типизирует `SubmitAttemptRequest` — invalid input не доходит до сервиса.\n\n## API-ошибки\n\nПо умолчанию Laravel на JSON-запросе отдаёт **422** с `errors`. Не глуши это try/catch «на всякий».\n\n## Собес\n\n- rules() vs Validator::make в контроллере — FormRequest чище\n- `authorize()` — отдельный слой permission (упрощённо: return true + policy позже)\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\npublic function __invoke(string $slug, SubmitAttemptRequest $request, PracticeService $practice)\n{\n    return $this->respond(\n        $practice->submitAttempt($request->user(), $slug, $request->getDto())\n    );\n}\n```",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Клиент отправил API JSON без обязательного поля. Типичный HTTP-код Laravel?\n\n- A) 200\n- B) 422\n- C) 500",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Где объявлять rules для входящего API body предпочтительно?\n\n- A) В Eloquent boot()\n- B) В FormRequest::rules()\n- C) В Redis",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- FormRequest до контроллера\n- 422 + errors для API\n- **Закрыт:** 1 FormRequest и негативные кейсы в Feature-тесте"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Для поля email обязателен и должен быть email. Напечатай rules через `|` как в старом синтаксисе Laravel: `required|email`",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\necho '';\n",
+            "tests": [
+              {
+                "label": "rules string",
+                "stdin": "",
+                "expected_output": "required|email"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.queues",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Queues ops\n\n**Критерий:** объяснить failed jobs, retry/backoff; уметь «сломать → retry».\n\n## База\n\n```php\ndispatch(new SendNotificationEmailJob($id));\n// php artisan queue:work redis --tries=3\n```\n\nJob падает → попытки (`$tries` / `--tries`) → в `failed_jobs`.\n\n## Retry / backoff\n\n```php\npublic int $tries = 5;\n\npublic function backoff(): array\n{\n    return [10, 60, 300]; // seconds between attempts\n}\n```\n\n## Failed jobs\n\n```bash\nphp artisan queue:failed\nphp artisan queue:retry {id}\nphp artisan queue:flush\n```\n\n## Horizon (поверхностно для Middle−)\n\nUI/процесс-менеджер над Redis queues: supervisors, балансировка, метрики. Локально для обучения достаточно `queue:work` + таблица failed_jobs.\n\n## Собес\n\n«Идемпотентность job важна: retry не должен дважды списать деньги».\n"
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Job упал после исчерпания tries. Где запись по умолчанию?\n\n- A) `cache`\n- B) `failed_jobs`\n- C) `sessions`",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Что делает `backoff()` в Job?\n\n- A) Задаёт паузы между попытками\n- B) Удаляет миграции\n- C) Чистит Telescope",
+          "meta": {
+            "answer": "A"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- tries + backoff + failed_jobs\n- retry вручную после фикса бага\n- **Закрыт:** прогнать fail→retry в своей среде"
+        },
+        {
+          "kind": "exercise",
+          "order": 5,
+          "body_md": "Напечатай JSON-массив backoff секунд для схемы 10s, затем 60s: `[10,60]` без пробелов.",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\necho '';\n",
+            "tests": [
+              {
+                "label": "backoff",
+                "stdin": "",
+                "expected_output": "[10,60]"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.events",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Events (thin)\n\n**Критерий:** один Event + Listener; понимать queued listener.\n\n```php\nevent(new StepCompleted($userId, $nodeSlug));\n\n// Listener\nclass AwardStepXp\n{\n    public function handle(StepCompleted $event): void { /* ... */ }\n}\n\nclass AwardStepXp implements ShouldQueue { /* async */ }\n```\n\nСвязка: **Domain event** → listener(s). Не пихать XP-логику в LearningPathService напрямую (границы модулей).\n\nВ Evolv модуль Gamification слушает события из Path/Practice/Content — разбери его как живой пример.\n"
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Зачем `ShouldQueue` на Listener?\n\n- A) Чтобы выполнить handle асинхронно через queue\n- B) Чтобы отключить event\n- C) Чтобы создать миграцию",
+          "meta": {
+            "answer": "A"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Где лучше вызывать `event(...)` при complete step?\n\n- A) В Blade\n- B) В use-case/service LearningPath после успешного complete\n- C) В CSS",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- event → listener(s)\n- ShouldQueue = async\n- **Закрыт:** нарисовать цепочку + найти пример в Evolv Gamification"
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.sanctum",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Sanctum API auth\n\n**Критерий:** описать register/login/token/`auth:sanctum` + `/me`.\n\n## Personal access tokens\n\n```php\n$token = $user->createToken('api')->plainTextToken;\n// Authorization: Bearer {token}\nRoute::middleware('auth:sanctum')->group(...);\n```\n\n## Поток\n\n1. POST /auth/register или /login → token\n2. Клиент хранит token\n3. Каждый API-запрос с Bearer\n4. `/auth/me` — текущий user\n5. logout → revoke token\n\n## Собес\n\n- Sanctum ≠ полный OAuth-сервер; для first-party API/SPA — стандарт\n- Не логировать plainTextToken\n"
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Какой заголовок несёт API token Sanctum?\n\n- A) `X-CSRF-TOKEN` только\n- B) `Authorization: Bearer …`\n- C) `Cookie: queue`",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Что делает `auth:sanctum` middleware?\n\n- A) Пропускает только аутентифицированного по токену/сессии пользователя\n- B) Запускает миграции\n- C) Чистит Redis",
+          "meta": {
+            "answer": "A"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- createToken → Bearer → auth:sanctum\n- revoke на logout\n- **Закрыт:** объяснить поток Evolv Auth на пальцах"
+        },
+        {
+          "kind": "exercise",
+          "order": 5,
+          "body_md": "Напечатай имя middleware-алиаса для защиты API: `auth:sanctum`",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\necho '';\n",
+            "tests": [
+              {
+                "label": "middleware",
+                "stdin": "",
+                "expected_output": "auth:sanctum"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.webhooks",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Webhook идемпотентность\n\n**Критерий:** идемпотентный handler + тест «двойной POST не создаёт вторую оплату».\n\n## Проблема\n\nПлатёжка может прислать **один и тот же** webhook 2+ раза (ретраи сети). Наивный код создаёт два заказа.\n\n## Паттерн\n\n1. Выделить **idempotency key** (event id провайдера)\n2. Уникальный индекс / таблица `processed_webhooks`\n3. Транзакция: insert key → если duplicate → return 200 без побочных эффектов\n4. Только потом менять баланс/статус заказа\n\n```php\nDB::transaction(function () use ($eventId, $payload) {\n    try {\n        ProcessedWebhook::query()->create(['provider_event_id' => $eventId]);\n    } catch (UniqueConstraintViolationException) {\n        return; // already processed\n    }\n    $this->applyPayment($payload);\n});\n```\n\n## Собес\n\n«Идемпотентность важнее “красивого” sync-кода; 200 на дубликат — норма».\n"
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Провайдер прислал тот же event id второй раз. Правильное поведение?\n\n- A) Создать вторую оплату\n- B) Вернуть успех без повторного эффекта\n- C) Удалить пользователя",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Что хранить для дедупа webhook?\n\n- A) Уникальный id события провайдера\n- B) Случайный float\n- C) Только User-Agent",
+          "meta": {
+            "answer": "A"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- unique event id + early return\n- транзакция вокруг сайд-эффектов\n- **Закрыт:** мини-тест двойного POST в pet-проекте"
+        },
+        {
+          "kind": "exercise",
+          "order": 5,
+          "body_md": "Добавь проверку идемпотентности. Дубликат evt_1 не должен увеличивать charges. Напечатай `$charges` (ожидается 1).",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\n$processed = [];\n$charges = 0;\n\nfunction handle(string $eventId): void\n{\n    global $processed, $charges;\n    // TODO: skip if already processed\n    $processed[$eventId] = true;\n    $charges++;\n}\n\nhandle('evt_1');\nhandle('evt_1');\necho $charges;\n",
+            "tests": [
+              {
+                "label": "idempotent",
+                "stdin": "",
+                "expected_output": "1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.ci",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Mini CI/CD\n\n**Критерий:** PR красный→зелёный с `pint` + `phpunit` (или `artisan test`).\n\n## Минимальный GitHub Actions\n\n```yaml\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: shivammathur/setup-php@v2\n        with: { php-version: '8.5' }\n      - run: composer install --no-interaction\n      - run: vendor/bin/pint --test\n      - run: php artisan test\n```\n\n## Зачем Middle−\n\nЗаказчик ожидает, что ты не ломаешь main «втихую». CI = минимальный профессиональный сигнал.\n\n## Собес\n\n«Пайплайн: install → lint → tests; без деплоя на первом шаге нормально».\n"
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Что делает `pint --test` в CI?\n\n- A) Правит код и коммитит\n- B) Проверяет стиль без записи (fail если грязно)\n- C) Поднимает MySQL",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Минимальный полезный CI для Laravel API?\n\n- A) Только deploy на Friday\n- B) composer install + lint + tests\n- C) Только Discord webhook",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- install → pint --test → artisan test\n- **Закрыт:** зелёный workflow на своём репо/ветке"
+        }
+      ]
+    },
+    {
+      "node_slug": "laravel.estimate",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Оценка задачи / питч\n\n**Критерий:** одна страница оценки фичи для заказчика.\n\n## Шаблон (скопируй себе)\n\n1. **Цель** — что получит бизнес (1 предложение)\n2. **Scope** — 3–7 буллетов «делаем»\n3. **Out of scope** — явно «не делаем»\n4. **Риски** — интеграции, неизвестные API, N+1/нагрузка\n5. **Оценка** — S/M/L или часы: happy path / с буфером (+30%)\n6. **План проверки** — Feature-тесты / ручной чеклист\n\n## Фразы\n\n- «Буфер 30% на неизвестные webhook-кейсы»\n- «Сначала вертикальный срез API, потом polish»\n\n## Практика на Evolv\n\nОцени фичу «геймификация XP/стрик» письменно — потом сравни с тем, что реально ушло на модуль в репо.\n"
+        },
+        {
+          "kind": "quiz",
+          "order": 2,
+          "body_md": "Зачем секция Out of scope?\n\n- A) Чтобы раздуть счёт\n- B) Чтобы согласовать границы и не расползтись\n- C) Чтобы заменить тесты",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Буфер к оценке чаще нужен из-за?\n\n- A) Линейной математики\n- B) Неизвестностей и интеграций\n- C) Цвета кнопок только",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 4,
+          "body_md": "- цель / scope / out / риски / часы / тест-план\n- **Закрыт:** 1 стр. оценки реальной фичи"
+        }
+      ]
+    }
+  ]
+}

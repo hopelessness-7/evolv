@@ -1,0 +1,187 @@
+{
+  "track": "laravel",
+  "nodes": [
+    {
+      "slug": "laravel.n1",
+      "title": "Eloquent N+1",
+      "summary": "Симптом N+1, with()/loadMissing(), детект в Telescope",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["eloquent", "performance", "middle"],
+        "estimated_minutes": 45,
+        "criterion": "Найти N+1 в чужом коде и починить 2 кейса",
+        "practice_types": ["code", "explain"],
+        "puzzle_pieces": ["eloquent"]
+      }
+    },
+    {
+      "slug": "laravel.sql-explain",
+      "title": "SQL: индексы и EXPLAIN",
+      "summary": "Составные индексы, EXPLAIN, WHERE vs HAVING",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["sql", "indexes", "middle"],
+        "estimated_minutes": 40,
+        "criterion": "EXPLAIN до/после; WHERE vs HAVING устно",
+        "practice_types": ["explain", "code"],
+        "puzzle_pieces": []
+      }
+    },
+    {
+      "slug": "laravel.container",
+      "title": "Service Container / Providers",
+      "summary": "bind vs singleton, resolve, register/boot",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["container", "providers", "middle"],
+        "estimated_minutes": 45,
+        "criterion": "Объяснить bind vs singleton + зарегистрировать bind",
+        "practice_types": ["theory", "trace", "code"],
+        "puzzle_pieces": ["container"]
+      }
+    },
+    {
+      "slug": "laravel.lifecycle",
+      "title": "HTTP lifecycle",
+      "summary": "Request → Kernel → MW → Router → Controller → Response",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["http", "lifecycle", "middle"],
+        "estimated_minutes": 45,
+        "criterion": "Устно пройти путь request с классами Laravel",
+        "practice_types": ["theory", "trace", "code"],
+        "puzzle_pieces": ["http", "kernel", "mw", "router", "resp"]
+      }
+    },
+    {
+      "slug": "laravel.php8-speech",
+      "title": "PHP 8 speech",
+      "summary": "readonly, enum, ===, typed props — формулировки для собеса",
+      "status": "published",
+      "meta": {
+        "difficulty": 2,
+        "tags": ["php8", "interview", "middle"],
+        "estimated_minutes": 35,
+        "criterion": "60с объяснение readonly, enum, === с примером",
+        "practice_types": ["theory", "code"],
+        "puzzle_pieces": []
+      }
+    },
+    {
+      "slug": "laravel.validation",
+      "title": "Request / Validation",
+      "summary": "FormRequest, rules, failed validation API",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["validation", "http", "middle"],
+        "estimated_minutes": 40,
+        "criterion": "Свой FormRequest + 3 негативных кейса",
+        "practice_types": ["code"],
+        "puzzle_pieces": ["formreq", "ctrl"]
+      }
+    },
+    {
+      "slug": "laravel.queues",
+      "title": "Queues ops",
+      "summary": "failed jobs, retry/backoff, Horizon surface",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["queues", "redis", "ops", "middle"],
+        "estimated_minutes": 45,
+        "criterion": "Сломать job → retry; объяснить backoff",
+        "practice_types": ["code", "ops"],
+        "puzzle_pieces": ["job", "queue"]
+      }
+    },
+    {
+      "slug": "laravel.events",
+      "title": "Events (thin)",
+      "summary": "event → listener → queued listener",
+      "status": "published",
+      "meta": {
+        "difficulty": 2,
+        "tags": ["events", "middle"],
+        "estimated_minutes": 30,
+        "criterion": "1 event + listener + queued listener",
+        "practice_types": ["code", "theory"],
+        "puzzle_pieces": ["event"]
+      }
+    },
+    {
+      "slug": "laravel.sanctum",
+      "title": "Sanctum API auth",
+      "summary": "token API, guard, /me, protected routes",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["auth", "sanctum", "api", "middle"],
+        "estimated_minutes": 40,
+        "criterion": "register/login/me + protected route на пальцах",
+        "practice_types": ["code", "theory"],
+        "puzzle_pieces": []
+      }
+    },
+    {
+      "slug": "laravel.webhooks",
+      "title": "Webhook идемпотентность",
+      "summary": "Платёжный флоу, двойная доставка, idempotency key",
+      "status": "published",
+      "meta": {
+        "difficulty": 4,
+        "tags": ["integrations", "payments", "middle"],
+        "estimated_minutes": 45,
+        "criterion": "Идемпотентный handler + тест двойного POST",
+        "practice_types": ["code"],
+        "puzzle_pieces": []
+      }
+    },
+    {
+      "slug": "laravel.ci",
+      "title": "Mini CI/CD",
+      "summary": "pint + phpunit в GitHub Actions",
+      "status": "published",
+      "meta": {
+        "difficulty": 2,
+        "tags": ["ci", "ops", "middle"],
+        "estimated_minutes": 35,
+        "criterion": "PR красный→зелёный: lint + tests",
+        "practice_types": ["ops", "theory"],
+        "puzzle_pieces": []
+      }
+    },
+    {
+      "slug": "laravel.estimate",
+      "title": "Оценка задачи / питч",
+      "summary": "Декомпозиция, риски, часы для заказчика",
+      "status": "published",
+      "meta": {
+        "difficulty": 3,
+        "tags": ["soft-skills", "estimate", "middle"],
+        "estimated_minutes": 40,
+        "criterion": "Письменная оценка 1 фичи (1 стр.)",
+        "practice_types": ["theory", "written"],
+        "puzzle_pieces": []
+      }
+    }
+  ],
+  "edges": [
+    { "from": "laravel.n1", "to": "laravel.sql-explain", "kind": "requires" },
+    { "from": "laravel.sql-explain", "to": "laravel.container", "kind": "requires" },
+    { "from": "laravel.container", "to": "laravel.lifecycle", "kind": "requires" },
+    { "from": "laravel.lifecycle", "to": "laravel.php8-speech", "kind": "requires" },
+    { "from": "laravel.lifecycle", "to": "laravel.validation", "kind": "requires" },
+    { "from": "laravel.container", "to": "laravel.queues", "kind": "requires" },
+    { "from": "laravel.queues", "to": "laravel.events", "kind": "requires" },
+    { "from": "laravel.validation", "to": "laravel.sanctum", "kind": "requires" },
+    { "from": "laravel.sanctum", "to": "laravel.webhooks", "kind": "requires" },
+    { "from": "laravel.queues", "to": "laravel.ci", "kind": "requires" },
+    { "from": "laravel.webhooks", "to": "laravel.estimate", "kind": "requires" },
+    { "from": "laravel.ci", "to": "laravel.estimate", "kind": "requires" }
+  ]
+}

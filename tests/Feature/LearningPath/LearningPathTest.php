@@ -59,6 +59,65 @@ class LearningPathTest extends TestCase
             ->assertJsonPath('steps.1.status', 'available');
     }
 
+    public function test_theory_and_practice_auto_complete_step(): void
+    {
+        $headers = $this->authenticatedHeaders();
+
+        $this->getJson('/api/v1/learning-path', $headers)
+            ->assertOk()
+            ->assertJsonPath('steps.0.status', 'available')
+            ->assertJsonPath('steps.0.node.slug', 'php.intro');
+
+        $content = $this->getJson('/api/v1/content/nodes/php.intro', $headers)->assertOk()->json();
+        $quizzes = collect($content['atoms'])->where('kind', 'quiz')->values();
+        $this->assertGreaterThanOrEqual(1, $quizzes->count());
+
+        foreach ($quizzes as $quiz) {
+            $answer = strtolower((string) ($quiz['meta']['answer'] ?? ''));
+            $this->postJson('/api/v1/content/nodes/php.intro/quiz-check', [
+                'atom_id' => $quiz['id'],
+                'answer' => $answer,
+            ], $headers)
+                ->assertOk()
+                ->assertJsonPath('correct', true);
+        }
+
+        $this->getJson('/api/v1/learning-path', $headers)
+            ->assertOk()
+            ->assertJsonPath('steps.0.status', 'available');
+
+        $exercise = $this->getJson('/api/v1/practice/nodes/php.intro/exercise', $headers)
+            ->assertOk()
+            ->json();
+
+        $driver = \Mockery::mock(\App\Modules\Practice\Contracts\CodeExecutionDriverInterface::class);
+        $driver->shouldReceive('execute')
+            ->once()
+            ->andReturn(new \App\Modules\Practice\DTO\ExecutionResultData(
+                verdict: \App\Modules\Practice\Enums\AttemptVerdict::Accepted,
+                stdout: "Hello, Evolv!\n",
+                durationMs: 20,
+                judge0Response: ['status' => ['id' => 3]],
+            ));
+
+        $this->app->instance(\App\Modules\Practice\Contracts\CodeExecutionDriverInterface::class, $driver);
+        $this->app->forgetInstance(\App\Modules\Practice\Services\ExerciseRunner::class);
+        $this->app->forgetInstance(\App\Modules\Practice\Services\PracticeService::class);
+        $this->mock(\App\Modules\AI\Services\LlmRouter::class);
+
+        $this->postJson('/api/v1/practice/nodes/php.intro/attempts', [
+            'atom_id' => $exercise['atom_id'],
+            'code' => "<?php\necho 'Hello, Evolv!';",
+        ], $headers)
+            ->assertOk()
+            ->assertJsonPath('verdict', 'accepted');
+
+        $this->getJson('/api/v1/learning-path', $headers)
+            ->assertOk()
+            ->assertJsonPath('steps.0.status', 'completed')
+            ->assertJsonPath('steps.1.status', 'available');
+    }
+
     public function test_progress_endpoint_returns_percent(): void
     {
         $headers = $this->authenticatedHeaders();

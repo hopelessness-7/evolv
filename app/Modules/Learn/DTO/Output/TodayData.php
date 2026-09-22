@@ -3,6 +3,7 @@
 namespace App\Modules\Learn\DTO\Output;
 
 use App\Modules\Coach\DTO\Output\DailyPlanData;
+use App\Modules\Gamification\DTO\Output\GamificationProfileData;
 use App\Modules\LearningPath\DTO\Output\PathProgressData;
 use App\Modules\Onboarding\DTO\Output\OnboardingStatusData;
 use App\Modules\Shared\Contracts\RespondsAsArray;
@@ -13,6 +14,7 @@ final readonly class TodayData implements RespondsAsArray
         public OnboardingStatusData $onboarding,
         public DailyPlanData $dailyPlan,
         public ?PathProgressData $progress,
+        public ?GamificationProfileData $gamification = null,
     ) {}
 
     public function toArray(): array
@@ -21,6 +23,7 @@ final readonly class TodayData implements RespondsAsArray
             'onboarding' => $this->onboarding->toArray(),
             'daily_plan' => $this->dailyPlan->toArray(),
             'progress' => $this->progress?->toArray(),
+            'gamification' => $this->gamification?->toArray(),
         ];
     }
 }

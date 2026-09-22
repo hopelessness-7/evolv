@@ -36,12 +36,26 @@ class ExerciseRunner
         $overallVerdict = AttemptVerdict::Accepted;
 
         foreach ($exercise->tests as $test) {
+            // Run without Judge0 expected_output — compare locally with normalized whitespace.
             $result = $this->executor->execute(
                 sourceCode: $sourceCode,
                 languageId: $languageId,
                 stdin: $test->stdin !== '' ? $test->stdin : null,
-                expectedOutput: $test->expectedOutput,
+                expectedOutput: null,
             );
+
+            if ($result->verdict === AttemptVerdict::Accepted) {
+                $expected = $test->expectedOutput;
+                if ($expected !== null && $expected !== '' && ! $this->outputsMatch($result->stdout, $expected)) {
+                    $result = new ExecutionResultData(
+                        verdict: AttemptVerdict::WrongAnswer,
+                        stdout: $result->stdout,
+                        stderr: $result->stderr,
+                        durationMs: $result->durationMs,
+                        judge0Response: $result->judge0Response,
+                    );
+                }
+            }
 
             $results[] = $result;
             $lastStdout = $result->stdout ?? $lastStdout;
@@ -68,5 +82,20 @@ class ExerciseRunner
             'duration_ms' => $totalDurationMs,
             'results' => $results,
         ];
+    }
+
+    private function outputsMatch(?string $actual, string $expected): bool
+    {
+        return $this->normalizeOutput($actual ?? '') === $this->normalizeOutput($expected);
+    }
+
+    /**
+     * Normalize trailing newlines/spaces and CRLF so echo "x" matches expected "x".
+     */
+    private function normalizeOutput(string $value): string
+    {
+        $value = str_replace(["\r\n", "\r"], "\n", $value);
+
+        return rtrim($value, " \t\n\0\x0B");
     }
 }

@@ -42,9 +42,12 @@ class ContentTest extends TestCase
         $headers = ['Authorization' => 'Bearer '.$token];
 
         foreach ([
-            'php.intro', 'php.variables', 'php.strings', 'php.operators', 'php.arrays',
-            'php.control-flow', 'php.functions', 'php.scope', 'php.forms',
-            'php.include', 'php.errors', 'php.http-basics',
+            'php.intro', 'php.variables', 'php.types', 'php.strings', 'php.operators', 'php.arrays',
+            'php.control-flow', 'php.functions', 'php.closures', 'php.oop-basics', 'php.oop-inheritance',
+            'php.interfaces', 'php.traits', 'php.enums-readonly', 'php.exceptions', 'php.namespaces-autoload',
+            'php.composer', 'php.files-streams', 'php.json-http', 'php.datetime', 'php.generators',
+            'php.security', 'php.attributes', 'php.testing', 'php.quality', 'php.advanced-types',
+            'php.errors-debug', 'php.capstone',
         ] as $slug) {
             $this->getJson("/api/v1/content/nodes/{$slug}", $headers)->assertOk();
         }

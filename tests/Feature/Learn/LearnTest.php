@@ -42,6 +42,7 @@ class LearnTest extends TestCase
                 'onboarding',
                 'daily_plan' => ['date', 'mode', 'steps'],
                 'progress',
+                'gamification',
             ]);
     }
 

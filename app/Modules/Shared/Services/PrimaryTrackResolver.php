@@ -5,6 +5,7 @@ namespace App\Modules\Shared\Services;
 use App\Models\User;
 use App\Modules\Curriculum\Enums\Track;
 use App\Modules\Onboarding\Contracts\OnboardingProfileReaderInterface;
+use App\Modules\Onboarding\Contracts\UserProfileRepositoryInterface;
 
 class PrimaryTrackResolver
 {
@@ -13,6 +14,7 @@ class PrimaryTrackResolver
      */
     private const LANGUAGE_TRACKS = [
         'php' => Track::Php,
+        'laravel' => Track::Laravel,
         'sql' => Track::Sql,
         'javascript' => Track::Javascript,
         'python' => Track::Python,
@@ -21,12 +23,23 @@ class PrimaryTrackResolver
 
     public function __construct(
         private readonly OnboardingProfileReaderInterface $onboarding,
+        private readonly UserProfileRepositoryInterface $profiles,
     ) {}
 
     public function resolve(User $user): Track
     {
         $context = $this->onboarding->readForCoach($user);
-        $craftFacets = $context->profileSummary['facets']['craft_lite'] ?? [];
+        $facets = $context->profileSummary['facets'] ?? [];
+
+        $override = is_array($facets) ? ($facets['path']['primary_track'] ?? null) : null;
+        if (is_string($override) && $override !== '') {
+            $track = Track::tryFrom($override);
+            if ($track !== null) {
+                return $track;
+            }
+        }
+
+        $craftFacets = is_array($facets['craft_lite'] ?? null) ? $facets['craft_lite'] : [];
         $targetLanguages = $this->stringList($craftFacets['target_languages'] ?? ['php']);
 
         foreach ($targetLanguages as $language) {
@@ -36,6 +49,17 @@ class PrimaryTrackResolver
         }
 
         return Track::Php;
+    }
+
+    public function setPrimary(User $user, Track $track): void
+    {
+        $profile = $this->profiles->firstOrCreate($user);
+        $facets = is_array($profile->facets) ? $profile->facets : [];
+        $path = is_array($facets['path'] ?? null) ? $facets['path'] : [];
+        $path['primary_track'] = $track->value;
+        $facets['path'] = $path;
+        $profile->facets = $facets;
+        $this->profiles->save($profile);
     }
 
     /**

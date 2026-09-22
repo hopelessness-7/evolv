@@ -118,7 +118,7 @@ class AnswerSchemaValidator implements AnswerSchemaValidatorInterface
 
         return match ($type) {
             'text' => $this->validateText($question, $value),
-            'timezone' => is_string($value) && $value !== '' ? null : 'Timezone must be a non-empty string.',
+            'timezone' => $this->validateTimezone($value),
             'single_select' => $this->validateSingleSelect($question, $value),
             'multi_select' => $this->validateMultiSelect($question, $value),
             'number' => $this->validateNumber($question, $value),
@@ -141,6 +141,21 @@ class AnswerSchemaValidator implements AnswerSchemaValidatorInterface
 
         if (mb_strlen($value) > $maxLength) {
             return "Must not exceed {$maxLength} characters.";
+        }
+
+        return null;
+    }
+
+    private function validateTimezone(mixed $value): ?string
+    {
+        if (! is_string($value) || $value === '') {
+            return 'Timezone must be a non-empty string.';
+        }
+
+        try {
+            new \DateTimeZone($value);
+        } catch (\Exception) {
+            return 'Choose a valid IANA timezone (for example Europe/Moscow), not a city name.';
         }
 
         return null;

@@ -30,8 +30,27 @@ Interactive docs: `/docs/api` (Scramble) when enabled.
 | Method | Path | Auth |
 |--------|------|------|
 | GET | `/coach/daily-plan` | Bearer |
+| GET | `/coach/check-ins` | Bearer |
+| POST | `/coach/check-ins` | Bearer |
 
-Query: `date` (optional), `refresh=1` to regenerate.
+Query daily-plan: `date` (optional), `refresh=1` to queue regeneration (non-blocking).
+
+Response includes `status` (`ready`|`generating`), optional `message`, and `check_in` (null until submitted). See [coach.md](coach.md).
+
+Check-in body: `{ "energy": 1-5, "focus": 1-5, "practice_ready": 1-5, "plan_date": optional, "note": optional }`. Returns `{ check_in, daily_plan }` with load adapted (no LLM).
+
+## Journal
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/journal/entries` | Bearer |
+| POST | `/journal/entries` | Bearer |
+| PATCH | `/journal/entries/{id}` | Bearer |
+| DELETE | `/journal/entries/{id}` | Bearer |
+
+Body create: `{ "kind": "reflection|note|question", "body": "...", "node_slug": optional, "plan_date": "Y-m-d" optional }`.
+
+Query list: `?node_slug=&plan_date=&page=1&per_page=10` (response includes `meta`). See [journal.md](journal.md).
 
 ## Curriculum
 
@@ -57,12 +76,19 @@ Body for quiz-check: `{ "atom_id": 1, "answer": "B" }`.
 | Method | Path | Auth |
 |--------|------|------|
 | GET | `/learning-path/tracks` | Bearer |
-| GET | `/learning-path/plan` | Bearer |
+| GET | `/learning-path/plans` | Bearer |
+| POST | `/learning-path/enroll` | Bearer |
+| PUT | `/learning-path/primary` | Bearer |
+| GET | `/learning-path` | Bearer |
 | GET | `/learning-path/progress` | Bearer |
 | GET | `/learning-path/current-step` | Bearer |
 | GET | `/learning-path/current-step?with_content=1` | Bearer |
 | POST | `/learning-path/steps/{id}/start` | Bearer |
 | POST | `/learning-path/steps/{id}/complete` | Bearer |
+
+Body for enroll / primary: `{ "track": "php" }` (also `laravel`, …).
+
+Optional query on plan/progress/current-step: `?track=php` to work with a non-primary enrolled course.
 
 ## Learn (BFF)
 
@@ -70,6 +96,16 @@ Body for quiz-check: `{ "atom_id": 1, "answer": "B" }`.
 |--------|------|------|
 | GET | `/learn/today` | Bearer |
 | GET | `/learn/current-lesson` | Bearer |
+
+`/learn/today` includes optional `gamification` profile (XP / streak / puzzle pieces).
+
+## Gamification
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/gamification/me` | Bearer |
+
+See [gamification.md](gamification.md).
 
 ## Practice
 

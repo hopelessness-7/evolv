@@ -42,16 +42,15 @@ class ExerciseResolver implements PracticeExerciseReaderInterface
             throw PracticeException::invalidExerciseAtom($atom->id);
         }
 
-        return $this->mapAtomToExercise($atom, $node->id, $nodeSlug, $node->title);
+        return $this->mapAtomToExercise($atom, $node);
     }
 
     private function mapAtomToExercise(
         ContentAtom $atom,
-        int $nodeId,
-        string $nodeSlug,
-        string $nodeTitle,
+        \App\Modules\Curriculum\Models\KnowledgeNode $node,
     ): ExerciseData {
         $meta = is_array($atom->meta) ? $atom->meta : [];
+        $nodeMeta = is_array($node->meta) ? $node->meta : [];
 
         $language = (string) ($meta['language'] ?? '');
         $starterCode = (string) ($meta['starter_code'] ?? '');
@@ -83,12 +82,43 @@ class ExerciseResolver implements PracticeExerciseReaderInterface
 
         return new ExerciseData(
             atomId: $atom->id,
-            nodeId: $nodeId,
-            nodeSlug: $nodeSlug,
+            nodeId: $node->id,
+            nodeSlug: $node->slug,
             language: $language,
             starterCode: $starterCode,
             tests: $tests,
-            title: $nodeTitle,
+            title: $node->title,
+            prompt: trim((string) $atom->body_md),
+            hints: $this->extractHints($meta),
+            summary: $node->summary,
+            criterion: isset($nodeMeta['criterion']) ? (string) $nodeMeta['criterion'] : null,
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     * @return list<string>
+     */
+    private function extractHints(array $meta): array
+    {
+        $hints = [];
+
+        if (isset($meta['hints']) && is_array($meta['hints'])) {
+            foreach ($meta['hints'] as $hint) {
+                if (is_string($hint) && trim($hint) !== '') {
+                    $hints[] = trim($hint);
+                }
+            }
+        }
+
+        if (isset($meta['hint']) && is_string($meta['hint']) && trim($meta['hint']) !== '') {
+            $hints[] = trim($meta['hint']);
+        }
+
+        if (isset($meta['trace_hint']) && is_string($meta['trace_hint']) && trim($meta['trace_hint']) !== '') {
+            $hints[] = trim($meta['trace_hint']);
+        }
+
+        return array_values(array_unique($hints));
     }
 }

@@ -13,6 +13,7 @@ use App\Modules\Practice\DTO\Input\SubmitAttemptData;
 use App\Modules\Practice\DTO\Output\AttemptResultData;
 use App\Modules\Practice\Enums\AttemptKind;
 use App\Modules\Practice\Enums\AttemptVerdict;
+use App\Modules\Practice\Events\AttemptAccepted;
 use App\Modules\Practice\Models\Attempt;
 
 class PracticeService
@@ -64,6 +65,7 @@ class PracticeService
 
         if ($run['verdict'] === AttemptVerdict::Accepted) {
             $this->skillUpdater->recordAcceptedPractice($user, $exercise->nodeId);
+            AttemptAccepted::dispatch($user->id, $exercise->nodeId, $exercise->nodeSlug);
         }
 
         return new AttemptResultData(

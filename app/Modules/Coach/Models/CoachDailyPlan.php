@@ -3,6 +3,7 @@
 namespace App\Modules\Coach\Models;
 
 use App\Models\User;
+use App\Modules\Coach\Enums\DailyPlanStatus;
 use App\Modules\Coach\Enums\PlanMode;
 use App\Modules\Coach\Enums\PlanSource;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,9 @@ class CoachDailyPlan extends Model
         'plan_date',
         'mode',
         'source',
+        'status',
         'plan',
+        'plan_base',
     ];
 
     protected function casts(): array
@@ -24,7 +27,9 @@ class CoachDailyPlan extends Model
             'plan_date' => 'date',
             'mode' => PlanMode::class,
             'source' => PlanSource::class,
+            'status' => DailyPlanStatus::class,
             'plan' => 'array',
+            'plan_base' => 'array',
         ];
     }
 

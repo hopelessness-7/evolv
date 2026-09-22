@@ -2,10 +2,12 @@
 
 namespace App\Modules\Content\Services;
 
+use App\Models\User;
 use App\Modules\Content\Contracts\ContentVersionRepositoryInterface;
 use App\Modules\Content\DTO\Output\NodeContentData;
 use App\Modules\Content\DTO\Output\QuizCheckResultData;
 use App\Modules\Content\Enums\AtomKind;
+use App\Modules\Content\Events\QuizAnswered;
 use App\Modules\Content\Exceptions\ContentException;
 use App\Modules\Curriculum\Services\CurriculumService;
 
@@ -27,7 +29,7 @@ class ContentService
         return NodeContentData::fromVersion($version);
     }
 
-    public function checkQuiz(string $slug, int $atomId, string $answer): QuizCheckResultData
+    public function checkQuiz(User $user, string $slug, int $atomId, string $answer): QuizCheckResultData
     {
         $node = $this->curriculum->getNode($slug);
         $version = $this->versions->findActiveByNodeId($node->id)
@@ -47,6 +49,8 @@ class ContentService
         }
 
         $correct = strcasecmp(trim($answer), trim($expected)) === 0;
+
+        QuizAnswered::dispatch($user->id, $slug, $atomId, $correct);
 
         return new QuizCheckResultData(
             atomId: $atomId,

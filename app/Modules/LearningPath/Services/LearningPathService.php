@@ -14,11 +14,13 @@ use App\Modules\LearningPath\Contracts\LearningPlanRepositoryInterface;
 use App\Modules\LearningPath\DTO\Output\CurrentStepData;
 use App\Modules\LearningPath\DTO\Output\LearningPlanData;
 use App\Modules\LearningPath\DTO\Output\PathProgressData;
+use App\Modules\LearningPath\DTO\Output\PlanListData;
 use App\Modules\LearningPath\DTO\Output\PlanStepData;
 use App\Modules\LearningPath\DTO\Output\TrackListData;
 use App\Modules\LearningPath\DTO\Output\TrackOptionData;
 use App\Modules\LearningPath\Enums\PlanStatus;
 use App\Modules\LearningPath\Enums\StepStatus;
+use App\Modules\LearningPath\Events\StepCompleted;
 use App\Modules\LearningPath\Exceptions\LearningPathException;
 use App\Modules\LearningPath\Models\LearningPlan;
 use App\Modules\LearningPath\Models\LearningPlanStep;
@@ -38,8 +40,7 @@ class LearningPathService implements LearningPathReaderInterface
     public function listAvailableTracks(): TrackListData
     {
         $tracks = array_map(function (Track $track) {
-            $entrySlug = $track->value.'.intro';
-            $node = $this->nodes->findBySlug($entrySlug);
+            $node = $this->nodes->findBySlug($track->entrySlug());
             $hasContent = $node !== null && $node->status === NodeStatus::Published;
 
             return TrackOptionData::fromTrack($track, $hasContent);
@@ -48,12 +49,47 @@ class LearningPathService implements LearningPathReaderInterface
         return new TrackListData($tracks);
     }
 
-    public function getOrCreateCurrent(User $user): LearningPlanData
+    public function listPlans(User $user): PlanListData
     {
-        $plan = $this->plans->findActiveForUser($user);
+        $models = $this->plans->listForUser($user);
+
+        return PlanListData::fromModels(
+            $models,
+            $this->primaryTrack->resolve($user)->value,
+        );
+    }
+
+    public function enroll(User $user, Track $track): LearningPlanData
+    {
+        $this->assertTrackEnrollable($track);
+
+        $existing = $this->plans->findActiveForUserByTrack($user, $track);
+        if ($existing !== null) {
+            return LearningPlanData::fromModel($existing->loadMissing(['steps.node']));
+        }
+
+        return LearningPlanData::fromModel($this->createPlan($user, $track));
+    }
+
+    public function setPrimaryTrack(User $user, Track $track): PlanListData
+    {
+        $this->assertTrackEnrollable($track);
+        $this->primaryTrack->setPrimary($user, $track);
+
+        if ($this->plans->findActiveForUserByTrack($user, $track) === null) {
+            $this->createPlan($user, $track);
+        }
+
+        return $this->listPlans($user);
+    }
+
+    public function getOrCreateCurrent(User $user, ?Track $track = null): LearningPlanData
+    {
+        $track ??= $this->primaryTrack->resolve($user);
+        $plan = $this->plans->findActiveForUserByTrack($user, $track);
 
         if ($plan === null) {
-            $plan = $this->createPlan($user);
+            $plan = $this->createPlan($user, $track);
         }
 
         return LearningPlanData::fromModel($plan->loadMissing(['steps.node']));
@@ -61,10 +97,7 @@ class LearningPathService implements LearningPathReaderInterface
 
     public function startStep(User $user, int $stepId): LearningPlanData
     {
-        $plan = $this->plans->findActiveForUser($user)
-            ?? throw LearningPathException::stepNotFound($stepId);
-
-        $step = $plan->steps->firstWhere('id', $stepId)
+        $step = $this->plans->findStepForUser($user, $stepId)
             ?? throw LearningPathException::stepNotFound($stepId);
 
         if ($step->status !== StepStatus::Available) {
@@ -72,16 +105,18 @@ class LearningPathService implements LearningPathReaderInterface
         }
 
         $step->update(['status' => StepStatus::InProgress]);
+        $plan = $step->plan ?? throw LearningPathException::stepNotFound($stepId);
 
         return LearningPlanData::fromModel(
             $plan->fresh(['steps.node']),
         );
     }
 
-    public function getCurrentStep(User $user, bool $withContent = false): CurrentStepData
+    public function getCurrentStep(User $user, bool $withContent = false, ?Track $track = null): CurrentStepData
     {
-        $this->getOrCreateCurrent($user);
-        $plan = $this->plans->findActiveForUser($user)
+        $this->getOrCreateCurrent($user, $track);
+        $resolved = $track ?? $this->primaryTrack->resolve($user);
+        $plan = $this->plans->findActiveForUserByTrack($user, $resolved)
             ?? throw LearningPathException::noRouteAvailable();
 
         $step = $plan->steps->first(
@@ -108,10 +143,11 @@ class LearningPathService implements LearningPathReaderInterface
         return new CurrentStepData(step: $stepData, content: $content);
     }
 
-    public function getProgress(User $user): PathProgressData
+    public function getProgress(User $user, ?Track $track = null): PathProgressData
     {
-        $this->getOrCreateCurrent($user);
-        $plan = $this->plans->findActiveForUser($user)
+        $this->getOrCreateCurrent($user, $track);
+        $resolved = $track ?? $this->primaryTrack->resolve($user);
+        $plan = $this->plans->findActiveForUserByTrack($user, $resolved)
             ?? throw LearningPathException::noRouteAvailable();
 
         return PathProgressData::fromPlan($plan);
@@ -119,11 +155,10 @@ class LearningPathService implements LearningPathReaderInterface
 
     public function completeStep(User $user, int $stepId): LearningPlanData
     {
-        $plan = $this->plans->findActiveForUser($user)
+        $step = $this->plans->findStepForUser($user, $stepId)
             ?? throw LearningPathException::stepNotFound($stepId);
 
-        $step = $plan->steps->firstWhere('id', $stepId)
-            ?? throw LearningPathException::stepNotFound($stepId);
+        $plan = $step->plan ?? throw LearningPathException::stepNotFound($stepId);
 
         if (! $step->isCompletable()) {
             throw LearningPathException::stepNotCompletable($stepId);
@@ -134,6 +169,8 @@ class LearningPathService implements LearningPathReaderInterface
                 'status' => StepStatus::Completed,
                 'completed_at' => now(),
             ]);
+
+            $plan->loadMissing('steps');
 
             $next = $plan->steps
                 ->first(fn (LearningPlanStep $candidate) => $candidate->order_in_plan === $step->order_in_plan + 1);
@@ -151,6 +188,20 @@ class LearningPathService implements LearningPathReaderInterface
             }
         });
 
+        $step->loadMissing('node');
+        $rawPieces = $step->node->meta['puzzle_pieces'] ?? [];
+        $puzzlePieces = array_values(array_filter(
+            is_array($rawPieces) ? $rawPieces : [],
+            fn ($piece) => is_string($piece) && $piece !== '',
+        ));
+
+        StepCompleted::dispatch(
+            $user->id,
+            $step->id,
+            $step->node->slug,
+            $puzzlePieces,
+        );
+
         return LearningPlanData::fromModel(
             $plan->fresh(['steps.node']),
         );
@@ -162,7 +213,7 @@ class LearningPathService implements LearningPathReaderInterface
 
         if ($plan === null) {
             try {
-                $plan = $this->createPlan($user);
+                $plan = $this->createPlan($user, $this->primaryTrack->resolve($user));
             } catch (\Throwable) {
                 return null;
             }
@@ -186,9 +237,19 @@ class LearningPathService implements LearningPathReaderInterface
         ];
     }
 
-    private function createPlan(User $user): LearningPlan
+    private function assertTrackEnrollable(Track $track): void
     {
-        $track = $this->primaryTrack->resolve($user);
+        $entry = $this->nodes->findBySlug($track->entrySlug());
+
+        if ($entry === null || $entry->status !== NodeStatus::Published) {
+            throw LearningPathException::trackNotEnrollable($track->value);
+        }
+    }
+
+    private function createPlan(User $user, Track $track): LearningPlan
+    {
+        $this->assertTrackEnrollable($track);
+
         $route = $this->curriculumRoute->expandRouteForTrack($user, $track);
 
         if ($route->nodes === []) {

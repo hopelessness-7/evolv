@@ -7,38 +7,54 @@
         {
           "kind": "theory",
           "order": 1,
-          "body_md": "# PHP introduction\n\nPHP is a server-side scripting language designed for the web. A typical script runs on the server and returns HTML to the browser.\n\n## Your first script\n\n```php\n<?php\necho \"Hello, Evolv!\";\n```\n\nThe `<?php` tag tells the interpreter where PHP code begins."
+          "body_md": "# Введение в PHP 8+\n\nPHP — интерпретируемый язык для **веба и CLI**. Скрипт выполняется runtime-ом `php`, результат уходит в stdout (терминал) или в HTTP-ответ через веб-сервер (nginx/php-fpm, Apache, встроенный сервер).\n\n## Первый скрипт\n\n```php\n<?php\ndeclare(strict_types=1);\n\necho \"Hello, Evolv!\";\n```\n\n- `<?php` — начало кода (обязательный открывающий тег в чистых `.php` файлах).\n- `declare(strict_types=1);` — **в этом файле** скалярные аргументы/returns проверяются строго (`\"1\"` не пройдёт туда, где ждут `int`). Без declare PHP тихо жонглирует типами.\n- `echo` пишет в stdout. Для practice/Judge0 ожидаемая строка сравнивается **байт-в-байт** — без лишнего `\\n`, если он не нужен.\n\n## Где живёт PHP\n\n| Режим | Как запускают |\n|-------|----------------|\n| CLI | `php script.php`, crontab, workers |\n| Web | FPM/mod_php отдаёт ответ браузеру |\n\nКритерий узла: уметь запустить скрипт с `echo` и `strict_types`.\n"
         },
         {
           "kind": "snippet",
           "order": 2,
-          "body_md": "```php\n<?php\n$name = 'Alex';\necho \"Hi, {$name}!\";\n```",
-          "meta": { "language": "php" }
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\necho \"Hello, Evolv!\";\n```\n",
+          "meta": {
+            "language": "php"
+          }
         },
         {
           "kind": "quiz",
           "order": 3,
-          "body_md": "How does a PHP script start?\n\n- A) `<script>`\n- B) `<?php`\n- C) `#php`",
-          "meta": { "answer": "B" }
+          "body_md": "Чем открывается PHP-скрипт?\n\n- A) `<script type=\"php\">`\n- B) `<?php`\n- C) `#php`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Зачем `declare(strict_types=1);`?\n\n- A) Ускоряет JIT в два раза\n- B) Включает строгую проверку скалярных типов в файле\n- C) Отключает все Warning\n",
+          "meta": {
+            "answer": "B"
+          }
         },
         {
           "kind": "summary",
-          "order": 4,
-          "body_md": "- PHP runs on the server\n- Scripts start with `<?php`\n- `echo` outputs text"
+          "order": 5,
+          "body_md": "- Точка входа: `<?php` + `declare(strict_types=1);`\n- `echo` → stdout; точность строки критична\n- CLI и web — один язык, разные точки входа\n"
         },
         {
           "kind": "exercise",
-          "order": 5,
-          "body_md": "Print `Hello, Evolv!` to stdout.",
+          "order": 6,
+          "body_md": "Выведите ровно `Hello, Evolv!` (без перевода строки в конце).\n",
           "meta": {
             "language": "php",
-            "starter_code": "<?php\n// Print Hello, Evolv!\n",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n// Print exactly: Hello, Evolv!\necho '';\n",
             "tests": [
               {
                 "label": "greeting",
                 "stdin": "",
                 "expected_output": "Hello, Evolv!"
               }
+            ],
+            "hints": [
+              "Замените пустую строку в echo на Hello, Evolv!",
+              "Не добавляйте \\n."
             ]
           }
         }
@@ -51,31 +67,217 @@
         {
           "kind": "theory",
           "order": 1,
-          "body_md": "# Variables and types\n\nVariables store values. Names start with `$`.\n\n```php\n$count = 3;\n$price = 9.99;\n$label = 'starter';\n$active = true;\n```\n\nPHP is dynamically typed: the type is inferred from the value."
+          "body_md": "# Переменные и присваивание\n\nИмя переменной: `$` + идентификатор (`$name`, `$_count`). Регистр важен. До использования переменную нужно инициализировать — иначе Warning и `null`.\n\n## Присваивание и ссылки\n\n`$b = $a;` для скаляров — **копия значения**.  \n`$b = &$a;` — обе имени на одну ячейку; правят друг друга. В современном коде ссылки редки: предпочитайте return значений и объекты.\n\n## Константы\n\n| Способ | Когда |\n|--------|--------|\n| `const APP = 'evolv';` | compile-time, namespace/класс |\n| `define('APP', 'evolv');` | runtime, условное определение |\n| `public const string STATUS = 'ok';` | классовая (PHP 8.3+ typed) |\n\nКонстанта **без** `$`. Доступ: `APP` или `User::STATUS`.\n\nКритерий: объяснить разницу `const` vs `define`.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$name = 'Ann';\nconst APP = 'evolv';\n\necho $name . '@' . APP;\n```\n",
+          "meta": {
+            "language": "php"
+          }
         },
         {
           "kind": "quiz",
-          "order": 2,
-          "body_md": "Which declaration is valid?\n\n- A) `name = 'Alex'`\n- B) `$name = 'Alex'`\n- C) `var name = 'Alex'`",
-          "meta": { "answer": "B" }
+          "order": 3,
+          "body_md": "Как объявить константу времени компиляции в файле?\n\n- A) `$APP = 'evolv';`\n- B) `const APP = 'evolv';`\n- C) `let APP = 'evolv';\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Что делает `$b = &$a;`?\n\n- A) Копирует `$a` один раз\n- B) Связывает `$a` и `$b` на одну ячейку\n- C) Создаёт immutable-копию\n",
+          "meta": {
+            "answer": "B"
+          }
         },
         {
           "kind": "summary",
-          "order": 3,
-          "body_md": "- Use `$name` to declare variables\n- Common types: int, float, string, bool"
+          "order": 5,
+          "body_md": "- `$name` — переменная; константа — без `$`\n- `const` vs `define`; typed class const\n- Ссылки `&` — осознанно\n"
         },
         {
           "kind": "exercise",
-          "order": 4,
-          "body_md": "Create a variable `$greeting` with value `Hi` and echo it.",
+          "order": 6,
+          "body_md": "Задайте `$name = 'Ann'`, константу `APP = 'evolv'` через `const` и выведите `Ann@evolv`.\n",
           "meta": {
             "language": "php",
-            "starter_code": "<?php\n// Assign $greeting and echo it\n",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$name = 'Ann';\nconst APP = 'evolv';\n\n// TODO: echo Ann@evolv using $name and APP\necho '';\n",
             "tests": [
               {
-                "label": "echo greeting",
+                "label": "name@app",
                 "stdin": "",
-                "expected_output": "Hi"
+                "expected_output": "Ann@evolv"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.types",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Система типов PHP 8\n\nСкаляры: `int`, `float`, `string`, `bool`. Композиты: `array`, `object`, `callable`, `iterable`. Особые: `null`, `mixed`, `void` (нет значения), `never` (не возвращает — throw/exit).\n\n## Nullable и union\n\n- `?string` ≡ `string|null`\n- Union: `int|string`, `array|false` (частый стиль stdlib)\n- Intersection и DNF — отдельный узел advanced-types\n\n## Сигнатуры\n\n```php\nfunction label(?string $name): string\n{\n    return $name ?? 'guest';\n}\n```\n\nПри `strict_types` неверный аргумент/return → `TypeError`. Без strict PHP часто «подгонит» тип — отсюда баги `0`/`\"\"`/`null`.\n\nКритерий: назвать ≥5 типов и показать union/nullable.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nfunction label(?string $name): string\n{\n    return $name ?? 'guest';\n}\n\necho label(null);\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Что значит `?int`?\n\n- A) Только положительный int\n- B) `int` или `null`\n- C) Параметр опционален без типа\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Какой return type у функции, которая всегда бросает исключение?\n\n- A) `void`\n- B) `mixed`\n- C) `never`\n",
+          "meta": {
+            "answer": "C"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Скаляры + `array`/`object`/`callable`/`iterable`\n- `?T`, unions, `void`/`never`/`mixed`\n- `strict_types` ловит juggling на границах\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Реализуйте `label(?string $name): string` — имя или `guest` при `null`. Вызовите `label(null)` и выведите результат.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nfunction label(?string $name): string\n{\n    // TODO\n    return '';\n}\n\necho label(null);\n",
+            "tests": [
+              {
+                "label": "null→guest",
+                "stdin": "",
+                "expected_output": "guest"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.strings",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Строки\n\n- **Одинарные** `'...'` — почти литерал (`\\'` и `\\\\`).\n- **Двойные** `\"...\"` — интерполяция `$var` / `{$expr}`, `\n`, `\t`.\n- **Heredoc / nowdoc** — многострочные блоки (nowdoc без интерполяции).\n\n## Сборка\n\n- Конкатенация `.`\n- `sprintf('%s=%s', $k, $v)` — шаблоны\n- `str_contains` / `str_starts_with` / `str_ends_with` (PHP 8+)\n\n## Unicode\n\n`strlen` считает **байты**. Для символов UTF-8 — `mb_strlen` / `mb_substr` (расширение mbstring). На кириллице без mbstring легко «разрезать» символ.\n\nКритерий: собрать строку через sprintf + интерполяцию.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$lang = 'PHP';\n$ver = '8.3';\necho sprintf('%s=%s', $lang, $ver);\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Что безопаснее для длины UTF-8 с кириллицей?\n\n- A) `strlen`\n- B) `mb_strlen`\n- C) `count`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`\"Hi, {$name}\"` при `$name = 'Ann'` даст:\n\n- A) `Hi, {$name}`\n- B) `Hi, Ann`\n- C) Parse error\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Кавычки / heredoc / nowdoc\n- `sprintf`, `str_*` PHP 8\n- mbstring для Unicode\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "С `$lang = 'PHP'` и `$ver = '8.3'` выведите `PHP=8.3` через `sprintf`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$lang = 'PHP';\n$ver = '8.3';\n\n// TODO: sprintf('%s=%s', ...)\necho '';\n",
+            "tests": [
+              {
+                "label": "sprintf",
+                "stdin": "",
+                "expected_output": "PHP=8.3"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.operators",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Операторы и ===\n\nАрифметика: `+ - * / % **`. Сравнения: `==` (с приведением), **`===`** (тип + значение), `!==`, spaceship `<=>` (−1/0/1 для сортировок).\n\n## Частые сюрпризы\n\n```php\n0 == '0';   // true  — juggling\n0 === '0';  // false — разные типы\n```\n\nПравило продакшена: почти всегда `===` / `!==`.\n\n## Null-helpers\n\n- `$x ?? 'fallback'` — если `$x` null\n- `$x ??= 'fallback'` — присвоить только если null\n- `$obj?->method()` — nullsafe\n\nЛогика: `&&` / `||` / `!` (приоритетнее, чем `and`/`or`).\n\nКритерий: объяснить `==` vs `===` на примере.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$a = 0;\necho ($a == '0' ? 'loose' : 'no') . ':' . ($a === '0' ? 'strict' : 'diff');\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "`0 == '0'` и `0 === '0'` — это?\n\n- A) true и true\n- B) true и false\n- C) false и false\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`$x ?? 'fallback'` при `$x = null` вернёт:\n\n- A) `null`\n- B) `fallback`\n- C) Warning\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Предпочитайте `===`\n- `??` / `??=` / `?->`\n- `<=>` для сравнения\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "При `$a = 0` выведите `loose:diff` — ветки через `== '0'` и `=== '0'` (как в теории).\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$a = 0;\n\n$left = $a == '0' ? 'loose' : 'no';\n$right = $a === '0' ? 'strict' : 'diff';\n\n// TODO: echo $left . ':' . $right\necho '';\n",
+            "tests": [
+              {
+                "label": "loose-vs-strict",
+                "stdin": "",
+                "expected_output": "loose:diff"
               }
             ]
           }
@@ -89,13 +291,1287 @@
         {
           "kind": "theory",
           "order": 1,
-          "body_md": "# Arrays\n\nArrays hold ordered lists or key-value maps.\n\n```php\n$tags = ['php', 'web', 'backend'];\n$user = ['name' => 'Alex', 'level' => 1];\n```\n\nAccess elements with `$tags[0]` or `$user['name']`."
+          "body_md": "# Массивы\n\nВ PHP массив — упорядоченная **map** ключ→значение. Ключи: `int|string`.\n\n```php\n$list = [1, 2, 3];\n$user = ['name' => 'Ann', 'role' => 'dev'];\n```\n\n## Инструменты\n\n- `foreach ($a as $k => $v)`\n- Destructuring: `[$x, $y] = $pair;` / `['name' => $n] = $user;`\n- Spread: `$all = [0, ...$nums, 4];`\n- `array_map` / `array_filter` / `array_key_exists` (ключ есть даже если value `null`)\n- `in_array($v, $a, true)` — строгий третий аргумент\n\n`isset($a['k'])` ложно и когда ключа нет, и когда значение `null` — для наличия ключа берите `array_key_exists`.\n\nКритерий: unpack + foreach без сюрпризов.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$nums = [1, 2, 3];\n$all = [0, ...$nums, 4];\necho implode(',', $all);\n```\n",
+          "meta": {
+            "language": "php"
+          }
         },
         {
           "kind": "quiz",
+          "order": 3,
+          "body_md": "Проверить ключ при возможном `null`-значении:\n\n- A) только `isset`\n- B) `array_key_exists`\n- C) `empty` достаточно\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`[...$a, ...$b]` делает:\n\n- A) Уникальные значения\n- B) Распаковку в новый массив\n- C) Только для list-ключей 0..n\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- List vs assoc\n- Destructuring и spread\n- `array_*` + строгий `in_array`\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Из `$nums = [1, 2, 3]` соберите `[0, ...$nums, 4]` и выведите `0,1,2,3,4` через `implode`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$nums = [1, 2, 3];\n$all = [0, ...$nums, 4];\n\n// TODO: implode(',', $all)\necho '';\n",
+            "tests": [
+              {
+                "label": "spread",
+                "stdin": "",
+                "expected_output": "0,1,2,3,4"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.control-flow",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Управление потоком и match\n\nКлассика: `if` / `elseif` / `else`, `for` / `while` / `do-while` / `foreach`, `break` / `continue` (можно с уровнем вложенности).\n\n## switch vs match\n\n`switch` сравнивает через **`==`**, легко забыть `break` (fall-through).\n\n`match` (PHP 8+) — **выражение**, сравнение через **`===`**, возвращает значение, без fall-through:\n\n```php\n$label = match ($code) {\n    200 => 'ok',\n    404 => 'missing',\n    default => 'other',\n};\n```\n\nБез подходящей ветки и без `default` → `UnhandledMatchError`.\n\nКритерий: переписать switch на match.\n"
+        },
+        {
+          "kind": "snippet",
           "order": 2,
-          "body_md": "How do you read the first element of `$items`?\n\n- A) `$items(0)`\n- B) `$items[0]`\n- C) `$items->0`",
-          "meta": { "answer": "B" }
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$code = 404;\necho match ($code) {\n    200 => 'ok',\n    404 => 'missing',\n    default => 'other',\n};\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Почему `match` обычно предпочтительнее `switch`?\n\n- A) Сравнивает через `===` и возвращает значение\n- B) Нельзя указать `default`\n- C) Работает только со строками\n",
+          "meta": {
+            "answer": "A"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Нет ветки и нет `default` в `match` — будет:\n\n- A) `null`\n- B) `UnhandledMatchError`\n- C) Тихий пропуск\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- if/loops + break/continue\n- `match` вместо слабого switch\n- `match` — expression с `===`\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Для `$code = 404` выведите `missing` через `match` (200→ok, 404→missing, default→other).\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$code = 404;\n\necho match ($code) {\n    200 => 'ok',\n    // TODO: 404 branch → missing\n    default => 'other',\n};\n",
+            "tests": [
+              {
+                "label": "match-404",
+                "stdin": "",
+                "expected_output": "missing"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.functions",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Функции\n\n```php\nfunction add(int $a, int $b = 0): int\n{\n    return $a + $b;\n}\n\necho add(a: 2, b: 3); // named arguments\n```\n\n- Параметры с типами; defaults только справа от обязательных\n- **Named args** (PHP 8): порядок аргументов можно менять\n- Variadic: `function sum(int ...$ns): int`\n- Return type — часть контракта; `void` если нет значения\n\nОбласть: локальные переменные функции не видят внешние (кроме `global`/`$GLOBALS` — избегайте). First-class callable: `strlen(...)`.\n\nКритерий: функция с named args и return type.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nfunction add(int $a, int $b = 0): int\n{\n    return $a + $b;\n}\n\necho add(a: 2, b: 3);\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Named arguments записываются так:\n\n- A) `add(a=2, b=3)`\n- B) `add(a: 2, b: 3)`\n- C) `add[a: 2]`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`int ...$ns` означает:\n\n- A) Ровно один int\n- B) Ноль или больше аргументов int\n- C) Массив только по ссылке\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Типы параметров и return\n- Named args, defaults, variadic\n- Избегайте `global`\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Реализуйте `add(int $a, int $b = 0): int` и выведите `add(a: 2, b: 3)`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nfunction add(int $a, int $b = 0): int\n{\n    // TODO\n    return 0;\n}\n\necho add(a: 2, b: 3);\n",
+            "tests": [
+              {
+                "label": "named-add",
+                "stdin": "",
+                "expected_output": "5"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.closures",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Closures и arrow functions\n\nАнонимная функция — объект `Closure`:\n\n```php\n$factor = 3;\n$mul = function (int $x) use ($factor): int {\n    return $x * $factor;\n};\n```\n\n`use ($factor)` захватывает внешнюю переменную **по значению**; `use (&$factor)` — по ссылке.\n\n## Arrow functions\n\n`fn(int $x): int => $x * $factor` — короткий синтаксис, **авто**-захват по значению, тело — одно выражение.\n\nFirst-class callable: `$fn = strlen(...);` — Closure-обёртка над функцией.\n\nТипичное применение: `array_map`, `usort`, колбэки фреймворка.\n\nКритерий: замыкание с `use` + arrow `fn`.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$factor = 3;\n$mul = fn (int $x): int => $x * $factor;\necho $mul(4);\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Чем arrow `fn` удобнее полного `function`+`use`?\n\n- A) Не захватывает внешние переменные\n- B) Короткое выражение с авто-захватом по значению\n- C) Только внутри классов\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`strlen(...)` — это:\n\n- A) Немедленный вызов\n- B) First-class callable (Closure)\n- C) Синтаксическая ошибка\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- `function () use ($x)`\n- `fn =>` с auto-capture\n- `foo(...)` callables\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "При `$factor = 3` создайте arrow `fn(int $x): int => $x * $factor` и выведите `$mul(4)` → `12`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$factor = 3;\n\n// TODO: $mul = fn ...; echo $mul(4);\n",
+            "tests": [
+              {
+                "label": "arrow-mul",
+                "stdin": "",
+                "expected_output": "12"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.oop-basics",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# ООП: классы\n\n```php\nfinal class User\n{\n    public function __construct(\n        public readonly string $name,\n        private int $id,\n    ) {}\n\n    public function label(): string\n    {\n        return $this->name . '#' . $this->id;\n    }\n}\n```\n\n## Visibility\n\n`public` / `protected` / `private` — для свойств и методов. Инкапсулируйте состояние (`private`), наружу отдавайте поведение.\n\n## Promotion и readonly\n\nConstructor property promotion (PHP 8): visibility на параметре конструктора создаёт свойство.  \n`readonly` — запись один раз (обычно в конструкторе). С 8.2 — `readonly class`.\n\nКритерий: класс с promoted props и методом.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nfinal class User\n{\n    public function __construct(\n        public readonly string $name,\n        private int $id,\n    ) {}\n\n    public function label(): string\n    {\n        return $this->name . '#' . $this->id;\n    }\n}\n\necho (new User('Ann', 7))->label();\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Constructor property promotion — это:\n\n- A) Авто-Singleton\n- B) Параметры конструктора с visibility становятся свойствами\n- C) Только static-поля\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Повторно присвоить `readonly` свойство после конструктора:\n\n- A) Можно всегда\n- B) Нельзя (один раз)\n- C) Можно только из наследника\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Visibility + `$this`\n- Promotion и readonly\n- Методы с типами\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Класс `User`: promoted `public readonly string $name`, `private int $id`, метод `label()` → `name#id`. Выведите label для `new User('Ann', 7)`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nfinal class User\n{\n    public function __construct(\n        public readonly string $name,\n        private int $id,\n    ) {}\n\n    public function label(): string\n    {\n        // TODO\n        return '';\n    }\n}\n\necho (new User('Ann', 7))->label();\n",
+            "tests": [
+              {
+                "label": "user-label",
+                "stdin": "",
+                "expected_output": "Ann#7"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.oop-inheritance",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Наследование и abstract\n\n`class Cat extends Animal` наследует методы/свойства (с учётом visibility). Вызов родителя: `parent::__construct()` / `parent::method()`.\n\n## abstract и final\n\n- `abstract class` — нельзя `new`; может содержать `abstract function` без тела.\n- `final class` / `final function` — запрет наследования/переопределения.\n- Late static binding: `static::` vs `self::` — выбор класса в runtime у наследника.\n\n```php\nabstract class Animal\n{\n    abstract public function kind(): string;\n\n    public function tag(): string\n    {\n        return 'animal:' . $this->kind();\n    }\n}\n```\n\nКритерий: иерархия abstract + concrete.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nabstract class Animal\n{\n    abstract public function kind(): string;\n\n    public function tag(): string\n    {\n        return 'animal:' . $this->kind();\n    }\n}\n\nfinal class Cat extends Animal\n{\n    public function kind(): string\n    {\n        return 'cat';\n    }\n}\n\necho (new Cat())->tag();\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Можно ли сделать `new` у `abstract class`?\n\n- A) Да\n- B) Нет\n- C) Только с `final`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`static::method()` vs `self::method()` — в чём суть LSB?\n\n- A) `static::` учитывает класс вызова у наследника\n- B) Они всегда идентичны\n- C) `self::` только для трейтов\n",
+          "meta": {
+            "answer": "A"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- extends + parent::\n- abstract / final\n- `static::` (LSB)\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Сделайте abstract `Animal` с `kind(): string` и `tag()` → `animal:{kind}`. `Cat` возвращает `cat`. Выведите `(new Cat())->tag()`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nabstract class Animal\n{\n    abstract public function kind(): string;\n\n    public function tag(): string\n    {\n        return 'animal:' . $this->kind();\n    }\n}\n\nfinal class Cat extends Animal\n{\n    public function kind(): string\n    {\n        // TODO\n        return '';\n    }\n}\n\necho (new Cat())->tag();\n",
+            "tests": [
+              {
+                "label": "animal-cat",
+                "stdin": "",
+                "expected_output": "animal:cat"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.interfaces",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Interfaces и контракты\n\n`interface` описывает **публичный контракт** без реализации (кроме default methods в редких RFC-кейсах — в базе считайте методы абстрактными). Класс: `implements Pingable`.\n\n```php\ninterface Pingable\n{\n    public function ping(): string;\n}\n```\n\nОдин класс — много интерфейсов. Тип в сигнатуре `function hit(Pingable $x)` зависит от контракта, не от конкретного класса — DIP/ISP: мелкие интерфейсы лучше «бога на один раз».\n\nИнтерфейс ≠ наследование поведения; это **форма** для полиморфизма и тестов (моки).\n\nКритерий: интерфейс + 2 реализации (в упражнении — одна полная).\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\ninterface Pingable\n{\n    public function ping(): string;\n}\n\nfinal class OkPing implements Pingable\n{\n    public function ping(): string\n    {\n        return 'ok';\n    }\n}\n\nfunction hit(Pingable $p): string\n{\n    return 'ping:' . $p->ping();\n}\n\necho hit(new OkPing());\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Зачем объявлять параметр как `Pingable`, а не `OkPing`?\n\n- A) Чтобы зависеть от контракта, а не конкретной реализации\n- B) Интерфейсы быстрее классов\n- C) Иначе нельзя вызвать метод\n",
+          "meta": {
+            "answer": "A"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Класс может реализовать:\n\n- A) Только один interface\n- B) Несколько interfaces\n- C) Только если уже extends\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- interface = контракт\n- implements + полиморфизм\n- ISP: узкие интерфейсы\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Интерфейс `Pingable` с `ping(): string`, класс `OkPing` → `'ok'`, функция `hit(Pingable $p): string` → `ping:` + ping. Выведите `hit(new OkPing())`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\ninterface Pingable\n{\n    public function ping(): string;\n}\n\nfinal class OkPing implements Pingable\n{\n    public function ping(): string\n    {\n        // TODO\n        return '';\n    }\n}\n\nfunction hit(Pingable $p): string\n{\n    return 'ping:' . $p->ping();\n}\n\necho hit(new OkPing());\n",
+            "tests": [
+              {
+                "label": "ping-ok",
+                "stdin": "",
+                "expected_output": "ping:ok"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.traits",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Traits\n\nTrait — горизонтальное переиспользование методов без наследования:\n\n```php\ntrait Logger\n{\n    public function log(): string\n    {\n        return 'logged';\n    }\n}\n\nfinal class Service\n{\n    use Logger;\n}\n```\n\n## Конфликты\n\nЕсли два trait дают одно имя метода: `insteadof` выбрать победителя, `as` — алиас:\n\n```php\nuse A, B {\n    B::save insteadof A;\n    A::save as saveA;\n}\n```\n\nTrait не заменяет композицию сервисов: для состояния с зависимостями чаще **внедрение** объекта. Traits удобны для повторяющихся мелких способностей (helpers), не для всей доменной модели.\n\nКритерий: trait с методом в классе.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\ntrait Logger\n{\n    public function log(): string\n    {\n        return 'logged';\n    }\n}\n\nfinal class Service\n{\n    use Logger;\n}\n\necho (new Service())->log();\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Как подключить trait в класс?\n\n- A) `extends Logger`\n- B) `use Logger;` внутри класса\n- C) `import Logger;`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Два trait с одним именем метода — решается через:\n\n- A) Только переименование файла\n- B) `insteadof` / `as`\n- C) Автоматически побеждает алфавит\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- `use TraitName` в классе\n- Конфликты: insteadof/as\n- Не замена DI/композиции\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Создайте trait `Logger` с `log(): string` → `logged`, класс `Service` с `use Logger`, выведите `(new Service())->log()`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\ntrait Logger\n{\n    public function log(): string\n    {\n        // TODO\n        return '';\n    }\n}\n\nfinal class Service\n{\n    use Logger;\n}\n\necho (new Service())->log();\n",
+            "tests": [
+              {
+                "label": "trait-log",
+                "stdin": "",
+                "expected_output": "logged"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.enums-readonly",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Enum и readonly classes\n\n## Backed enum\n\n```php\nenum Status: string\n{\n    case Draft = 'draft';\n    case Published = 'published';\n}\n\nStatus::Draft->value; // 'draft'\nStatus::from('draft');\nStatus::tryFrom('nope'); // null\n```\n\nPure enum (без `: string|:int`) — только cases без scalar values. Методы и `implements` на enum допустимы.\n\n## Readonly class (8.2+)\n\n`readonly class Money` — все свойства readonly; удобно для DTO/value objects. Комбинируйте с promoted конструктором.\n\nНе мутируйте «даты статуса» через публичные поля — меняйте через явные методы/новые instance.\n\nКритерий: backed enum (+ идея readonly DTO).\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nenum Status: string\n{\n    case Draft = 'draft';\n    case Published = 'published';\n}\n\necho Status::Draft->value;\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "`Status::tryFrom('nope')` при невалидной строке вернёт:\n\n- A) Exception всегда\n- B) `null`\n- C) `Status::Draft`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`readonly class` означает:\n\n- A) Класс нельзя автозагрузить\n- B) Все свойства только для чтения после init\n- C) Запрещены методы\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Backed enum: value / from / tryFrom\n- Pure vs backed\n- Readonly DTO\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Объявите `enum Status: string` с `Draft = 'draft'` и выведите `Status::Draft->value`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nenum Status: string\n{\n    case Draft = 'draft';\n    case Published = 'published';\n}\n\n// TODO: echo value of Draft\n",
+            "tests": [
+              {
+                "label": "enum-draft",
+                "stdin": "",
+                "expected_output": "draft"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.exceptions",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Исключения\n\nИерархия: `Throwable` ← `Error` | `Exception`. Бизнес/ожидаемые сбои — обычно `Exception` и подклассы; фатальные проблемы движка — `Error` (TypeError, ValueError…).\n\n```php\ntry {\n    throw new RuntimeException('bad');\n} catch (RuntimeException $e) {\n    echo 'caught:' . $e->getMessage();\n} finally {\n    // всегда\n}\n```\n\nСвои исключения: `final class DomainException extends Exception {}` — ловите **конкретные** типы, не голый `Exception` без нужды. `finally` — освобождение ресурсов.\n\nНе глотайте исключения пустым `catch`. `throw` может быть expression (PHP 8).\n\nКритерий: свой Exception + catch.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\ntry {\n    throw new RuntimeException('bad');\n} catch (RuntimeException $e) {\n    echo 'caught:' . $e->getMessage();\n}\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Общий предок Exception и Error:\n\n- A) `RuntimeException`\n- B) `Throwable`\n- C) `Failure`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Блок `finally` выполняется:\n\n- A) Только при ошибке\n- B) Всегда при выходе из try/catch\n- C) Только если нет return\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Throwable / Exception / Error\n- try / catch / finally\n- Свои типы исключений\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "В `try` бросьте `RuntimeException('bad')`, в `catch` выведите `caught:` + message.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\ntry {\n    // TODO: throw\n    throw new RuntimeException('bad');\n} catch (RuntimeException $e) {\n    // TODO: echo caught:...\n    echo '';\n}\n",
+            "tests": [
+              {
+                "label": "caught-bad",
+                "stdin": "",
+                "expected_output": "caught:bad"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.namespaces-autoload",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Namespaces и PSR-4\n\n`namespace App\\Service;` задаёт пространство имён файла. Импорт: `use App\\Service\\UserService;`. FQCN: `\\App\\Service\\UserService`.\n\n## PSR-4\n\nComposer mapping: префикс namespace → каталог:\n\n```json\n\"App\\\\\": \"src/\"\n```\n\n`App\\Service\\UserService` → `src/Service/UserService.php`. Один класс — один файл с тем же именем. Автозагрузка подключает файл при первом обращении к классу — без ручных `require`.\n\n`require vendor/autoload.php` — точка входа автозагрузчика.\n\nКритерий: объяснить PSR-4 mapping.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n// Демонстрация FQCN-строки (без реальной автозагрузки в песочнице)\n$class = 'App\\Service\\UserService';\necho $class;\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "При `\"App\\\\\": \"src/\"` класс `App\\Domain\\User` лежит в:\n\n- A) `src/App/Domain/User.php`\n- B) `src/Domain/User.php`\n- C) `App/Domain/User.php` обязательно в корне проекта\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Зачем `use App\\Service\\UserService`?\n\n- A) Скачать пакет из Packagist\n- B) Импортировать короткое имя класса в текущий файл\n- C) Создать singleton\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- namespace / use / FQCN\n- PSR-4: prefix → directory\n- vendor/autoload.php\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Выведите строку FQCN `App\\Service\\UserService` (один backslash между сегментами в значении).\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n// TODO: echo App\\Service\\UserService\n",
+            "tests": [
+              {
+                "label": "fqcn",
+                "stdin": "",
+                "expected_output": "App\\Service\\UserService"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.composer",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Composer\n\nМенеджер зависимостей PHP. Ключевые файлы:\n\n| Файл | Роль |\n|------|------|\n| `composer.json` | require, autoload, scripts |\n| `composer.lock` | точные версии — **коммитьте** |\n| `vendor/` | установлено (обычно в .gitignore) |\n\n## Команды\n\n- `composer require pkg/name` / `require --dev`\n- `composer install` (по lock) vs `update`\n- `composer dump-autoload` после изменения PSR-4\n- scripts: `\"test\": \"phpunit\"`\n\n`require` — прод; `require-dev` — phpunit, pint, ide-helpers. В проде часто `--no-dev`.\n\nТочка входа кода: `require __DIR__.'/vendor/autoload.php';`.\n\nКритерий: описать composer.json на пальцах.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\necho 'vendor/autoload.php';\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "`composer.lock` обычно:\n\n- A) Игнорируют в git\n- B) Коммитят, чтобы воспроизводимые сборки\n- C) Генерируют только на CI\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "phpunit чаще кладут в:\n\n- A) `require`\n- B) `require-dev`\n- C) `suggest` обязательно\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- json + lock + vendor\n- require vs require-dev\n- dump-autoload / install\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Выведите путь автозагрузчика Composer: `vendor/autoload.php`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n// TODO\n",
+            "tests": [
+              {
+                "label": "autoload-path",
+                "stdin": "",
+                "expected_output": "vendor/autoload.php"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.files-streams",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Файлы и потоки\n\nБазово:\n\n- `file_get_contents` / `file_put_contents` — целиком в память\n- `fopen` + `fread`/`fwrite` + `fclose` — контроль\n- `SplFileObject` — ООП-обёртка, итерация по строкам\n- `__DIR__`, `dirname`, `PATH_SEPARATOR` — пути; не конкатенируйте вслепую `../` из user input (path traversal)\n\nПотоки (`php://stdin`, wrappers) позволяют единообразно читать источники. Для больших файлов — построчно/чанками, не `file_get_contents` на гигабайты.\n\nПрава, существование (`file_exists`, `is_readable`) и обработка ошибок — обязательны в проде.\n\nКритерий: мысль «прочитать/записать безопасно»; в песочнице — обработка строк как «строк файла».\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$lines = explode(\"\\n\", \"a\\nb\\nc\");\necho implode('|', $lines);\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Для огромного лога лучше:\n\n- A) `file_get_contents` целиком\n- B) Читать построчно / потоком\n- C) Всегда `eval`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Почему опасен путь из пользователя вроде `../../.env`?\n\n- A) Медленно\n- B) Path traversal — выход из разрешённой директории\n- C) PHP запрещает строки с точками\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- file_* vs fopen/streams\n- SplFileObject\n- Безопасные пути\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Разбейте строку `a\\nb\\nc` на линии и склейте через `|` → `a|b|c`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$raw = \"a\\nb\\nc\";\n\n// TODO: explode + implode\n",
+            "tests": [
+              {
+                "label": "lines-join",
+                "stdin": "",
+                "expected_output": "a|b|c"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.json-http",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# JSON и HTTP-клиент\n\n```php\n$json = json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);\n$data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);\n```\n\n`JSON_THROW_ON_ERROR` (PHP 7.3+) — исключения вместо молчаливого `null`. Assoc-массив: второй аргумент `true` у `json_decode`.\n\n## HTTP\n\n- `file_get_contents` + `stream_context_create` — простой GET/POST\n- `curl` — таймауты, заголовки, методы\n- В приложениях — Guzzle/PSR-18 клиент\n\nВсегда задавайте timeout, проверяйте HTTP-статус, не логируйте секреты. JSON API: Content-Type, схема ответа, ошибки 4xx/5xx.\n\nКритерий: распарсить JSON API-ответ.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$data = json_decode('{\"name\":\"Ann\"}', true, 512, JSON_THROW_ON_ERROR);\necho $data['name'];\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Зачем `JSON_THROW_ON_ERROR`?\n\n- A) Ускоряет parse\n- B) Бросает исключение вместо тихого null при ошибке\n- C) Обязателен только в CLI\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`json_decode($s, true)` возвращает:\n\n- A) Только object `stdClass`\n- B) Ассоциативный массив\n- C) Всегда string\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- encode/decode + flags\n- Assoc vs object\n- HTTP: timeouts и статусы\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Декодируйте `{\"name\":\"Ann\"}` в assoc-массив с `JSON_THROW_ON_ERROR` и выведите `name`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$json = '{\"name\":\"Ann\"}';\n\n// TODO: json_decode + echo name\n",
+            "tests": [
+              {
+                "label": "json-name",
+                "stdin": "",
+                "expected_output": "Ann"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.datetime",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# DateTimeImmutable\n\nПредпочитайте **`DateTimeImmutable`**: методы `modify`/`setDate` возвращают новый объект, исходный не меняется. Мутабельный `DateTime` легко ломает состояние, разделяемое между слоями.\n\n```php\n$d = new DateTimeImmutable('2026-07-15', new DateTimeZone('UTC'));\necho $d->format('Y'); // 2026\n$next = $d->modify('+1 day');\n```\n\n- Таймзоны: явно `DateTimeZone`, не полагайтесь на default сервера в проде\n- `diff` — интервал между датами\n- Форматы: `format('Y-m-d H:i:s')`, atom `DATE_ATOM`\n- Для «сейчас» в тестах — фиксируйте clock (или хотя бы тестовую дату)\n\nКритерий: не использовать мутабельный DateTime без причины.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$date = new DateTimeImmutable('2026-07-15');\necho $date->format('Y');\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Почему Immutable предпочтительнее DateTime?\n\n- A) Быстрее сериализация\n- B) Метод modify не мутирует исходный объект\n- C) Не нужна таймзона\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`$d->format('Y')` возвращает:\n\n- A) Месяц\n- B) Год (4 цифры)\n- C) Timestamp\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- DateTimeImmutable по умолчанию\n- TZ явно\n- format / modify / diff\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Создайте `DateTimeImmutable('2026-07-15')` и выведите год через `format('Y')` → `2026`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$date = new DateTimeImmutable('2026-07-15');\n\n// TODO: echo year via format('Y')\necho '';\n",
+            "tests": [
+              {
+                "label": "year-2026",
+                "stdin": "",
+                "expected_output": "2026"
+              }
+            ],
+            "hints": [
+              "format('Y')"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.generators",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Generators и итераторы\n\n`yield` создаёт `Generator` — итератор, который вычисляет значения **лениво**, не держа весь массив в памяти:\n\n```php\nfunction numbers(): Generator\n{\n    for ($i = 0; $i < 3; $i++) {\n        yield $i;\n    }\n}\n\nforeach (numbers() as $n) { /* ... */ }\n```\n\n`yield from` делегирует другому iterable. Генераторы реализуют Iterator; однопроходные — нельзя rewind произвольно после полного consume (новый вызов функции).\n\nКогда: большие файлы, стримы, пайплайны. Когда нет: нужны многократные проходы/счётчик без повторного create — тогда массив или кеш.\n\nКритерий: generator вместо огромного array.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nfunction numbers(): Generator\n{\n    for ($i = 0; $i < 3; $i++) {\n        yield $i;\n    }\n}\n\necho implode(',', iterator_to_array(numbers()));\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Главный плюс generator:\n\n- A) Всегда быстрее array_map\n- B) Ленивые значения без полного массива в памяти\n- C) Автоматический SQL\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Ключевое слово для значения генератора:\n\n- A) `return` каждый элемент\n- B) `yield`\n- C) `defer`\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- yield / yield from\n- Generator как Iterator\n- Память vs многократный обход\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Напишите `numbers(): Generator` с `yield` 0..2 и выведите `0,1,2` через `implode` + `iterator_to_array`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nfunction numbers(): Generator\n{\n    // TODO: yield 0,1,2\n}\n\necho implode(',', iterator_to_array(numbers()));\n",
+            "tests": [
+              {
+                "label": "gen-012",
+                "stdin": "",
+                "expected_output": "0,1,2"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.security",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Безопасность PHP\n\nМинимум на каждый день:\n\n1. **XSS:** `htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')` перед выводом в HTML.\n2. **Пароли:** только `password_hash` / `password_verify` (argon2id/bcrypt), никогда MD5/SHA1 «как пароль».\n3. **SQL injection:** prepared statements / query builder, никаких конкатенаций SQL с вводом.\n4. **Секреты:** `.env` вне публичного root, не в git; разные ключи для окружений.\n5. **CSRF / сессии / загрузки файлов** — фреймворковые middleware, whitelist расширений, хранение вне webroot.\n\nSecurity — слой привычек на границах ввода/вывода, не «отдельная фича в конце».\n\nКритерий: экранировать HTML (+ знание password_hash).\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$input = '<b>x</b>';\necho htmlspecialchars($input, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Пароль пользователя хранить как:\n\n- A) MD5 от пароля\n- B) `password_hash` / verify\n- C) Plain text в БД для support\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`htmlspecialchars` нужен чтобы:\n\n- A) Ускорить шаблоны\n- B) Нейтрализовать HTML/XSS при выводе\n- C) Сжать JSON\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- htmlspecialchars на вывод\n- password_hash\n- Prepared SQL, секреты в env\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Для `$input = '<b>x</b>'` выведите результат `htmlspecialchars(..., ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$input = '<b>x</b>';\n\n// TODO: echo htmlspecialchars\n",
+            "tests": [
+              {
+                "label": "escape-html",
+                "stdin": "",
+                "expected_output": "&lt;b&gt;x&lt;/b&gt;"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.attributes",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Attributes\n\nАтрибуты PHP 8 — структурированные метаданные вместо docblock-аннотаций:\n\n```php\n#[Attribute]\nfinal class Route\n{\n    public function __construct(public string $path) {}\n}\n\n#[Route('/users')]\nfinal class UsersController {}\n```\n\nЧтение: `ReflectionClass` / `ReflectionMethod` → `getAttributes(Route::class)`.\n\nФреймворки (Laravel, Symfony) используют attributes для маршрутов, validation, ORM mapping. Плюс vs docblock: валидный PHP, автоcomplete, меньше парсинга строк.\n\n`#[Attribute]` на классе атрибута задаёт, куда его можно вешать (TARGET_CLASS и т.д.).\n\nКритерий: зачем attributes vs docblocks.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n#[Attribute]\nfinal class Route\n{\n    public function __construct(public string $path) {}\n}\n\n#[Route('/ok')]\nfinal class Demo {}\n\n$ref = new ReflectionClass(Demo::class);\n$attr = $ref->getAttributes(Route::class)[0];\necho $attr->getName() === Route::class ? 'Route' : 'no';\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Как прочитать attribute в runtime?\n\n- A) Только через regex docblock\n- B) Reflection `getAttributes`\n- C) Через `echo` класса\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Преимущество attributes над docblock-аннотациями:\n\n- A) Меньше байт в файле всегда\n- B) Настоящий PHP-синтаксис + проверка движком\n- C) Работают только в Java\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- #[Attribute] классы\n- Reflection getAttributes\n- Маршруты/валидация во фреймворках\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Объявите `#[Attribute] class Route`, повесьте `#[Route('/ok')]` на `Demo`, через Reflection выведите короткое имя `Route` (строка `Route`).\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n#[Attribute]\nfinal class Route\n{\n    public function __construct(public string $path) {}\n}\n\n#[Route('/ok')]\nfinal class Demo {}\n\n$ref = new ReflectionClass(Demo::class);\n$attr = $ref->getAttributes(Route::class)[0];\n\n// TODO: echo 'Route' if attribute present (short name)\necho '';\n",
+            "tests": [
+              {
+                "label": "attr-route",
+                "stdin": "",
+                "expected_output": "Route"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.testing",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Тестирование основ\n\nТест = **arrange → act → assert**. В PHPUnit: `assertSame`, `assertTrue`, `expectException`. Unit — изолированный кусок без БД/HTTP; Feature/Integration — через приложение.\n\nБазовый sanity без фреймворка — `assert()` в CLI (в проде `zend.assertions` часто −1).\n\nХороший тест: детерминированный, один повод падать, читаемое имя. Плохой: зависит от порядка, sleep, внешний flaky API без stub.\n\nКритерий: уметь сформулировать 2 assert-сценария; в упражнении — простой PASS/FAIL через сравнение.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nfunction add(int $a, int $b): int\n{\n    return $a + $b;\n}\n\necho add(2, 3) === 5 ? 'PASS' : 'FAIL';\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Unit-тест обычно:\n\n- A) Ходит в реальную платёжку\n- B) Проверяет кусок логики изолированно\n- C) Только вручную в браузере\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Порядок AAA:\n\n- A) Assert → Act → Arrange\n- B) Arrange → Act → Assert\n- C) Act → Archive → Approve\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- AAA: arrange/act/assert\n- Unit vs Feature\n- Детерминизм и assertSame\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Функция `add(int $a, int $b): int`. Выведите `PASS`, если `add(2, 3) === 5`, иначе `FAIL`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nfunction add(int $a, int $b): int\n{\n    return $a + $b;\n}\n\n// TODO: echo PASS or FAIL\n",
+            "tests": [
+              {
+                "label": "assert-pass",
+                "stdin": "",
+                "expected_output": "PASS"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.quality",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Качество кода\n\nЧеклист перед PR:\n\n1. `declare(strict_types=1);` в новых PHP-файлах\n2. Форматтер: Laravel Pint / PHP-CS-Fixer — единый стиль\n3. Статанализ mindset: PHPStan/Psalm уровнями — ловят null/типы до рантайма\n4. Имена ясные, функции короткие, без копипасты «магических» чисел\n5. Нет мёртвого кода, `dd()`/`var_dump` не в merge\n6. Тесты на критичный путь зелёные\n\nЧитаемость > микрооптимизация на пустом месте. Code review ловит границы и имена лучше, чем «красоту скобок» после автоформата.\n\nКритерий: чеклист качества перед PR.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\necho 'strict_types';\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Что стоит делать на каждом новом PHP-файле?\n\n- A) Отключить ошибки\n- B) `declare(strict_types=1);`\n- C) Подключить IonCube\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "Pint / PHP-CS-Fixer нужны чтобы:\n\n- A) Заменить PHPUnit\n- B) Автоматически выровнять стиль кода\n- C) Деплоить на сервер\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- strict_types везде\n- Форматтер + статанализ\n- Читаемость и чистый PR\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Выведите литерал `strict_types` как напоминание базового качества файла.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n// TODO: echo strict_types\n",
+            "tests": [
+              {
+                "label": "quality-token",
+                "stdin": "",
+                "expected_output": "strict_types"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.advanced-types",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Продвинутые типы\n\n## Intersection (8.1+)\n\n`Countable&Iterator` — значение обязано удовлетворять **обоим** типам. Удобно для объектов-коллекций.\n\n## DNF (8.2+)\n\nDisjunctive Normal Form: `(A&B)|null` — комбинации union и intersection в каноническом виде.\n\n## still useful\n\n- `never` — функция не возвращает\n- Covariance/contravariance: return может сужаться у наследника, параметры — осторожно расширяться по правилам LSP\n- `callable` / first-class callables\n- Templating через PHPDoc generics (`@template`) до runtime generics\n\nКритерий: пример intersection type.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\nfunction label(Countable&Iterator $items): string\n{\n    return 'Countable&Iterator';\n}\n\necho label(new ArrayIterator([1, 2]));\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Тип `A&B` означает:\n\n- A) A или B\n- B) И A, и B одновременно\n- C) A минус B\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "DNF-типы появились чтобы:\n\n- A) Заменить классы\n- B) Законно комбинировать union и intersection\n- C) Отключить strict_types\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Intersection `A&B`\n- DNF `(A&B)|C`\n- never + variance basics\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Напишите функцию `label(Countable&Iterator $items): string`, возвращающую литерал `Countable&Iterator`, вызовите с `new ArrayIterator([1, 2])` и выведите результат.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\nfunction label(Countable&Iterator $items): string\n{\n    // TODO\n    return '';\n}\n\necho label(new ArrayIterator([1, 2]));\n",
+            "tests": [
+              {
+                "label": "intersection",
+                "stdin": "",
+                "expected_output": "Countable&Iterator"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.errors-debug",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Ошибки и отладка\n\n| | Exception | Error |\n|--|-----------|-------|\n| Смысл | Ожидаемый сбой домена/I/O | Серьёзный сбой runtime |\n| Примеры | RuntimeException, InvalidArgument | TypeError, ParseError |\n| Ловля | catch конкретных типов | обычно не «глушим» |\n\nНастройки: `error_reporting`, `display_errors` (выкл в проде), лог в stderr/файл/monolog. `ErrorException` может конвертировать notices в исключения.\n\nОтладка: Xdebug, `var_export`, воспроизводимый минимальный пример, стек `getTraceAsString()`. Сначала факт (ввод→ожидание→факт), потом гипотеза.\n\nКритерий: различить Error и Exception.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$t = new TypeError('boom');\necho $t instanceof Error ? 'Error' : 'Other';\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "`TypeError` является:\n\n- A) Только Exception\n- B) Подклассом Error (Throwable)\n- C) Warning без объекта\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "В проде `display_errors` обычно:\n\n- A) Включают для клиентов\n- B) Выключают, пишут в лог\n- C) Игнорируют — PHP сам решит\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Error vs Exception\n- Логи, не display в проде\n- Минимальный repro для дебага\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Создайте `TypeError` и выведите `Error`, если объект `instanceof Error`.\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$t = new TypeError('boom');\n\n// TODO: echo Error if instanceof Error\n",
+            "tests": [
+              {
+                "label": "instanceof-error",
+                "stdin": "",
+                "expected_output": "Error"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "node_slug": "php.capstone",
+      "version_no": 1,
+      "atoms": [
+        {
+          "kind": "theory",
+          "order": 1,
+          "body_md": "# Capstone: мини-CLI утилита\n\nСоберите вместе: функции, типы, JSON, аккуратный вывод. Типичный мини-CLI:\n\n1. Принять данные (аргументы / литерал в упражнении)\n2. Провалидировать\n3. Посчитать\n4. Вывести JSON в stdout\n5. Код выхода 0/1 (в песочнице достаточно корректного JSON)\n\n```php\n$items = [1, 2, 3];\necho json_encode(['ok' => true, 'n' => count($items)], JSON_THROW_ON_ERROR);\n```\n\nВ реальном CLI: `$argv`, `getopt`, исключения → stderr + `exit(1)`, enum статуса, без «тихих» catch. Здесь фиксируем контракт ответа `{\"ok\":true,\"n\":3}`.\n\nКритерий: рабочий вывод по ТЗ.\n"
+        },
+        {
+          "kind": "snippet",
+          "order": 2,
+          "body_md": "```php\n<?php\ndeclare(strict_types=1);\n\n$items = [1, 2, 3];\necho json_encode(['ok' => true, 'n' => count($items)], JSON_THROW_ON_ERROR);\n```\n",
+          "meta": {
+            "language": "php"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 3,
+          "body_md": "Для машинно-читаемого ответа CLI часто используют:\n\n- A) Только цветной HTML\n- B) JSON в stdout\n- C) GUI обязательно\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "quiz",
+          "order": 4,
+          "body_md": "`JSON_THROW_ON_ERROR` при ошибке encode:\n\n- A) Вернёт false\n- B) Бросит JsonException\n- C) Проигнорирует\n",
+          "meta": {
+            "answer": "B"
+          }
+        },
+        {
+          "kind": "summary",
+          "order": 5,
+          "body_md": "- Склеить функции + JSON\n- Контракт stdout\n- Ошибки → stderr/exit в бою\n"
+        },
+        {
+          "kind": "exercise",
+          "order": 6,
+          "body_md": "Для `$items = [1, 2, 3]` выведите JSON `{\"ok\":true,\"n\":3}` через `json_encode` с `JSON_THROW_ON_ERROR` (без пробелов, как у json_encode по умолчанию).\n",
+          "meta": {
+            "language": "php",
+            "starter_code": "<?php\ndeclare(strict_types=1);\n\n$items = [1, 2, 3];\n\n// TODO: echo json_encode(['ok' => true, 'n' => count($items)], JSON_THROW_ON_ERROR);\n",
+            "tests": [
+              {
+                "label": "cli-json",
+                "stdin": "",
+                "expected_output": "{\"ok\":true,\"n\":3}"
+              }
+            ]
+          }
         }
       ]
     }

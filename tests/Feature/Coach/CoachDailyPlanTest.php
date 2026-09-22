@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Modules\AI\DTO\LlmResponse;
 use App\Modules\AI\Exceptions\LlmException;
 use App\Modules\AI\Services\LlmRouter;
+use App\Modules\Coach\Enums\DailyPlanStatus;
+use App\Modules\Coach\Jobs\GenerateDailyPlanJob;
 use Database\Seeders\OnboardingQuestionnaireSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -28,71 +30,98 @@ class CoachDailyPlanTest extends TestCase
         $this->getJson('/api/v1/coach/daily-plan')->assertUnauthorized();
     }
 
-    public function test_new_user_gets_simplified_fallback_plan(): void
+    public function test_new_user_gets_fallback_immediately_and_queues_llm_job(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('api')->plainTextToken;
 
-        $this->mock(LlmRouter::class, function ($mock): void {
-            $mock->shouldReceive('chat')
-                ->once()
-                ->andThrow(new LlmException('offline'));
-        });
-
-        $this->getJson('/api/v1/coach/daily-plan', [
+        $response = $this->getJson('/api/v1/coach/daily-plan', [
             'Authorization' => 'Bearer '.$token,
         ])
             ->assertOk()
             ->assertJsonPath('mode', 'simplified')
             ->assertJsonPath('source', 'fallback')
+            ->assertJsonPath('status', DailyPlanStatus::Generating->value)
             ->assertJsonPath('cached', false)
+            ->assertJsonPath('check_in', null)
+            ->assertJsonPath('steps.0.type', 'check_in')
+            ->assertJsonPath('steps.1.title', 'Пройти онбординг')
             ->assertJsonStructure([
                 'date',
                 'total_minutes',
                 'greeting',
+                'status',
+                'message',
+                'check_in',
                 'steps' => [['type', 'title', 'description', 'minutes']],
                 'reminders',
             ]);
+
+        $this->assertStringContainsString('Привет', (string) $response->json('greeting'));
+        $this->assertStringContainsString('готовится', (string) $response->json('message'));
+
+        Queue::assertPushed(GenerateDailyPlanJob::class, function (GenerateDailyPlanJob $job) use ($user) {
+            return $job->userId === $user->id;
+        });
 
         $this->assertDatabaseHas('coach_daily_plans', [
             'user_id' => $user->id,
             'mode' => 'simplified',
             'source' => 'fallback',
+            'status' => DailyPlanStatus::Generating->value,
         ]);
     }
 
-    public function test_daily_plan_is_cached_for_the_same_day(): void
+    public function test_daily_plan_is_cached_when_ready_without_refresh(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('api')->plainTextToken;
         $headers = ['Authorization' => 'Bearer '.$token];
 
-        $this->mock(LlmRouter::class, function ($mock): void {
-            $mock->shouldReceive('chat')
-                ->once()
-                ->andThrow(new LlmException('offline'));
-        });
+        $this->getJson('/api/v1/coach/daily-plan', $headers)->assertOk();
+
+        // Simulate job completing with fallback still in place
+        \App\Modules\Coach\Models\CoachDailyPlan::query()
+            ->where('user_id', $user->id)
+            ->update(['status' => DailyPlanStatus::Ready->value]);
+
+        Queue::fake();
 
         $this->getJson('/api/v1/coach/daily-plan', $headers)
             ->assertOk()
-            ->assertJsonPath('cached', false);
+            ->assertJsonPath('cached', true)
+            ->assertJsonPath('status', DailyPlanStatus::Ready->value);
 
-        $this->getJson('/api/v1/coach/daily-plan', $headers)
-            ->assertOk()
-            ->assertJsonPath('cached', true);
+        Queue::assertNothingPushed();
     }
 
-    public function test_refresh_regenerates_plan(): void
+    public function test_refresh_marks_generating_and_queues_job(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('api')->plainTextToken;
         $headers = ['Authorization' => 'Bearer '.$token];
 
-        $this->mock(LlmRouter::class, function ($mock): void {
-            $mock->shouldReceive('chat')
-                ->once()
-                ->andThrow(new LlmException('offline'));
-        });
+        $this->getJson('/api/v1/coach/daily-plan', $headers)->assertOk();
+
+        \App\Modules\Coach\Models\CoachDailyPlan::query()
+            ->where('user_id', $user->id)
+            ->update(['status' => DailyPlanStatus::Ready->value]);
+
+        Queue::fake();
+
+        $this->getJson('/api/v1/coach/daily-plan?refresh=1', $headers)
+            ->assertOk()
+            ->assertJsonPath('status', DailyPlanStatus::Generating->value)
+            ->assertJsonPath('source', 'fallback');
+
+        Queue::assertPushed(GenerateDailyPlanJob::class);
+    }
+
+    public function test_generate_job_writes_llm_plan_as_ready(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('api')->plainTextToken;
+        $headers = ['Authorization' => 'Bearer '.$token];
 
         $this->getJson('/api/v1/coach/daily-plan', $headers)->assertOk();
 
@@ -120,14 +149,22 @@ class CoachDailyPlanTest extends TestCase
                 ));
         });
 
-        $this->getJson('/api/v1/coach/daily-plan?refresh=1', $headers)
+        (new GenerateDailyPlanJob($user->id, now()->toDateString()))->handle(
+            $this->app->make(\App\Modules\Onboarding\Contracts\OnboardingProfileReaderInterface::class),
+            $this->app->make(\App\Modules\Coach\Services\DailyPlanGenerator::class),
+            $this->app->make(\App\Modules\Coach\Contracts\DailyPlanRepositoryInterface::class),
+            $this->app->make(\App\Modules\Coach\Services\CoachService::class),
+        );
+
+        $this->getJson('/api/v1/coach/daily-plan', $headers)
             ->assertOk()
             ->assertJsonPath('source', 'llm')
             ->assertJsonPath('greeting', 'Refreshed plan')
-            ->assertJsonPath('cached', false);
+            ->assertJsonPath('status', DailyPlanStatus::Ready->value)
+            ->assertJsonPath('cached', true);
     }
 
-    public function test_personalized_fallback_includes_node_slug(): void
+    public function test_personalized_fallback_includes_node_slug_and_tools(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('api')->plainTextToken;
@@ -138,64 +175,48 @@ class CoachDailyPlanTest extends TestCase
         $this->completeCore($headers);
         $this->completeCraftLite($headers, ['fundamentals']);
 
+        $response = $this->getJson('/api/v1/coach/daily-plan?refresh=1', $headers)
+            ->assertOk()
+            ->assertJsonPath('mode', 'personalized')
+            ->assertJsonPath('steps.0.type', 'check_in')
+            ->assertJsonPath('steps.1.node_slug', 'php.intro')
+            ->assertJsonPath('steps.1.type', 'lesson');
+
+        $this->assertIsArray($response->json('steps.1.tools'));
+        $this->assertNotEmpty($response->json('steps.1.prompts'));
+
+        $reflection = collect($response->json('steps'))->firstWhere('type', 'reflection');
+        $this->assertNotNull($reflection);
+        $this->assertNotEmpty($reflection['tools']);
+        $this->assertCount(3, $reflection['prompts']);
+    }
+
+    public function test_generate_job_falls_back_when_llm_fails(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('api')->plainTextToken;
+        $headers = ['Authorization' => 'Bearer '.$token];
+
+        $this->getJson('/api/v1/coach/daily-plan', $headers)->assertOk();
+
         $this->mock(LlmRouter::class, function ($mock): void {
             $mock->shouldReceive('chat')
                 ->once()
                 ->andThrow(new LlmException('offline'));
         });
 
-        $this->getJson('/api/v1/coach/daily-plan?refresh=1', $headers)
+        (new GenerateDailyPlanJob($user->id, now()->toDateString()))->handle(
+            $this->app->make(\App\Modules\Onboarding\Contracts\OnboardingProfileReaderInterface::class),
+            $this->app->make(\App\Modules\Coach\Services\DailyPlanGenerator::class),
+            $this->app->make(\App\Modules\Coach\Contracts\DailyPlanRepositoryInterface::class),
+            $this->app->make(\App\Modules\Coach\Services\CoachService::class),
+        );
+
+        $this->getJson('/api/v1/coach/daily-plan', $headers)
             ->assertOk()
-            ->assertJsonPath('mode', 'personalized')
-            ->assertJsonPath('steps.0.node_slug', 'php.intro')
-            ->assertJsonPath('steps.0.type', 'lesson');
-    }
-
-    public function test_personalized_plan_after_craft_lite_complete(): void
-    {
-        $user = User::factory()->create();
-        $token = $user->createToken('api')->plainTextToken;
-        $headers = ['Authorization' => 'Bearer '.$token];
-
-        $this->completeCore($headers);
-        $this->completeCraftLite($headers);
-
-        $this->mock(LlmRouter::class, function ($mock): void {
-            $mock->shouldReceive('chat')
-                ->once()
-                ->andReturn(new LlmResponse(
-                    content: json_encode([
-                        'date' => now()->toDateString(),
-                        'mode' => 'personalized',
-                        'total_minutes' => 30,
-                        'greeting' => 'Personalized day',
-                        'steps' => [
-                            [
-                                'type' => 'lesson',
-                                'title' => 'PHP basics',
-                                'description' => 'Read lesson',
-                                'minutes' => 15,
-                                'pillar' => 'craft',
-                            ],
-                            [
-                                'type' => 'practice',
-                                'title' => 'Exercise',
-                                'description' => 'Solve task',
-                                'minutes' => 15,
-                                'pillar' => 'craft',
-                            ],
-                        ],
-                        'reminders' => [],
-                    ], JSON_THROW_ON_ERROR),
-                    model: 'phi3:mini',
-                ));
-        });
-
-        $this->getJson('/api/v1/coach/daily-plan?refresh=1', $headers)
-            ->assertOk()
-            ->assertJsonPath('mode', 'personalized')
-            ->assertJsonPath('source', 'llm')
-            ->assertJsonPath('greeting', 'Personalized day');
+            ->assertJsonPath('source', 'fallback')
+            ->assertJsonPath('mode', 'simplified')
+            ->assertJsonPath('status', DailyPlanStatus::Ready->value);
     }
 
     public function test_invalid_plan_date_returns_api_error(): void
@@ -208,24 +229,6 @@ class CoachDailyPlanTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['date']);
-    }
-
-    public function test_llm_failure_falls_back_to_deterministic_plan(): void
-    {
-        $user = User::factory()->create();
-        $token = $user->createToken('api')->plainTextToken;
-        $headers = ['Authorization' => 'Bearer '.$token];
-
-        $this->mock(LlmRouter::class, function ($mock): void {
-            $mock->shouldReceive('chat')
-                ->once()
-                ->andThrow(new \App\Modules\AI\Exceptions\LlmException('offline'));
-        });
-
-        $this->getJson('/api/v1/coach/daily-plan?refresh=1', $headers)
-            ->assertOk()
-            ->assertJsonPath('source', 'fallback')
-            ->assertJsonPath('mode', 'simplified');
     }
 
     /**

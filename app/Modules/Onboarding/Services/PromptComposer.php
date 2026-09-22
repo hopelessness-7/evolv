@@ -8,6 +8,7 @@ use App\Modules\Onboarding\DTO\Output\InterpretedAnswersData;
 use App\Modules\Onboarding\Models\OnboardingSession;
 use App\Modules\Onboarding\Models\Questionnaire;
 use App\Modules\Onboarding\Models\UserProfile;
+use App\Modules\Shared\Support\InterfaceLanguage;
 
 class PromptComposer implements OnboardingPromptComposerInterface
 {
@@ -37,7 +38,17 @@ class PromptComposer implements OnboardingPromptComposerInterface
             }
         }
 
-        return array_merge($context, $interpreted->facets);
+        $merged = array_merge($context, $interpreted->facets);
+        $langCode = InterfaceLanguage::fromFacets([
+            'core' => [
+                'interface_language' => is_string($merged['interface_language'] ?? null)
+                    ? $merged['interface_language']
+                    : InterfaceLanguage::RU,
+            ],
+        ]);
+        $merged['interface_language_label'] = InterfaceLanguage::displayName($langCode);
+
+        return $merged;
     }
 
     /** @param  array<string, mixed>  $variables */

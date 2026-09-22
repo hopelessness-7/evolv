@@ -13,6 +13,6 @@ class CheckQuizController extends ApiController
     {
         $dto = $request->getDto();
 
-        return $this->respond($content->checkQuiz($slug, $dto->atomId, $dto->answer));
+        return $this->respond($content->checkQuiz($request->user(), $slug, $dto->atomId, $dto->answer));
     }
 }

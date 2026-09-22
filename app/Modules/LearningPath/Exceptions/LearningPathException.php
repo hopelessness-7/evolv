@@ -26,8 +26,13 @@ class LearningPathException extends ApiException
         return new self("Learning plan step [{$stepId}] cannot be started.", 409, 'learning_step_not_startable');
     }
 
-    public static function noActiveStep(): self
+    public static function trackNotEnrollable(string $track): self
     {
-        return new self('No active learning step found.', 404, 'learning_step_not_active');
+        return new self("Track [{$track}] has no published curriculum entry.", 422, 'learning_track_not_enrollable');
+    }
+
+    public static function planNotFoundForTrack(string $track): self
+    {
+        return new self("No active learning plan for track [{$track}]. Enroll first.", 404, 'learning_plan_not_found');
     }
 }
